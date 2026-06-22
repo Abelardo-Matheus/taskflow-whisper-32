@@ -446,6 +446,52 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
             </Button>
           </div>
         </div>
+
+        {/* Connect existing instance */}
+        <div className="border-t pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium text-card-foreground">Já tem uma instância criada?</h4>
+              <p className="text-xs text-muted-foreground">Vincule um canal existente da Evolution API a este workspace.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowExistingForm(v => !v)}>
+              {showExistingForm ? "Cancelar" : "Vincular existente"}
+            </Button>
+          </div>
+
+          {showExistingForm && (
+            <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Nome de exibição</label>
+                <Input
+                  value={existingDisplayName}
+                  onChange={(e) => setExistingDisplayName(e.target.value)}
+                  placeholder="Ex: WhatsApp Vendas"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">ID da instância (instance_name)</label>
+                <Input
+                  value={existingInstanceName}
+                  onChange={(e) => setExistingInstanceName(e.target.value)}
+                  placeholder="ex: vendas-principal"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O mesmo nome usado ao criar a instância na sua Evolution API.
+                </p>
+              </div>
+              <Button
+                onClick={handleConnectExisting}
+                disabled={isConnectingExisting || !existingDisplayName.trim() || !existingInstanceName.trim() || !apiUrl.trim() || !apiKey.trim()}
+                className="w-full gap-2"
+              >
+                {isConnectingExisting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                {isConnectingExisting ? "Vinculando..." : "Vincular instância"}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
