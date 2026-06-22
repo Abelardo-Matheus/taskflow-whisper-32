@@ -42,6 +42,10 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
   const [instanceName, setInstanceName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isConnectingExisting, setIsConnectingExisting] = useState(false);
+  const [showExistingForm, setShowExistingForm] = useState(false);
+  const [existingInstanceName, setExistingInstanceName] = useState("");
+  const [existingDisplayName, setExistingDisplayName] = useState("");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [isFetchingQr, setIsFetchingQr] = useState(false);
@@ -195,6 +199,57 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
       setViewMode("qrcode");
       fetchQr(inst.id);
       startPolling(inst.id);
+    }
+  };
+
+  const handleConnectExisting = async () => {
+    if (!existingDisplayName.trim() || !existingInstanceName.trim()) {
+      toast.error("Preencha o nome e o ID da instância");
+      return;
+    }
+    if (!apiUrl.trim() || !apiKey.trim()) {
+      toast.error("Configure a URL e API Key primeiro");
+      return;
+    }
+
+    setIsConnectingExisting(true);
+    try {
+      const { data: profileData } = await supabase
+        .from("profiles").select("workspace_id")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id).single();
+
+      const { data, error } = await supabase.functions.invoke("connect-evolution-instance", {
+        body: {
+          api_url: apiUrl.trim(),
+          api_key: apiKey.trim(),
+          instance_name: existingInstanceName.trim(),
+          name: existingDisplayName.trim(),
+          workspace_id: profileData?.workspace_id,
+        },
+      });
+
+      if (error || !data?.success) throw new Error(data?.error || error?.message || "Erro");
+
+      toast.success("Instância vinculada! ✅");
+      setActiveInstanceId(data.instance_id);
+      setShowExistingForm(false);
+      setExistingInstanceName("");
+      setExistingDisplayName("");
+
+      const { data: updated } = await supabase.from("whatsapp_instances").select("*").eq("is_active", true).order("created_at", { ascending: false });
+      setInstances(updated || []);
+
+      if (data.status === "connected") {
+        setViewMode("connected");
+      } else {
+        if (data.qr_code) setQrCode(data.qr_code);
+        setViewMode("qrcode");
+        startPolling(data.instance_id);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao vincular instância");
+    } finally {
+      setIsConnectingExisting(false);
     }
   };
 
@@ -390,6 +445,52 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
               {isCreating ? "Criando..." : "Criar instância e gerar QR Code"}
             </Button>
           </div>
+        </div>
+
+        {/* Connect existing instance */}
+        <div className="border-t pt-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <h4 className="text-sm font-medium text-card-foreground">Já tem uma instância criada?</h4>
+              <p className="text-xs text-muted-foreground">Vincule um canal existente da Evolution API a este workspace.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setShowExistingForm(v => !v)}>
+              {showExistingForm ? "Cancelar" : "Vincular existente"}
+            </Button>
+          </div>
+
+          {showExistingForm && (
+            <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">Nome de exibição</label>
+                <Input
+                  value={existingDisplayName}
+                  onChange={(e) => setExistingDisplayName(e.target.value)}
+                  placeholder="Ex: WhatsApp Vendas"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-medium text-muted-foreground">ID da instância (instance_name)</label>
+                <Input
+                  value={existingInstanceName}
+                  onChange={(e) => setExistingInstanceName(e.target.value)}
+                  placeholder="ex: vendas-principal"
+                  className="font-mono text-sm"
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  O mesmo nome usado ao criar a instância na sua Evolution API.
+                </p>
+              </div>
+              <Button
+                onClick={handleConnectExisting}
+                disabled={isConnectingExisting || !existingDisplayName.trim() || !existingInstanceName.trim() || !apiUrl.trim() || !apiKey.trim()}
+                className="w-full gap-2"
+              >
+                {isConnectingExisting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
+                {isConnectingExisting ? "Vinculando..." : "Vincular instância"}
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </div>
