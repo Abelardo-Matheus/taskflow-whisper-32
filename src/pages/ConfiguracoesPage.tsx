@@ -42,6 +42,10 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
   const [instanceName, setInstanceName] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
+  const [isConnectingExisting, setIsConnectingExisting] = useState(false);
+  const [showExistingForm, setShowExistingForm] = useState(false);
+  const [existingInstanceName, setExistingInstanceName] = useState("");
+  const [existingDisplayName, setExistingDisplayName] = useState("");
   const [qrCode, setQrCode] = useState<string | null>(null);
   const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
   const [isFetchingQr, setIsFetchingQr] = useState(false);
