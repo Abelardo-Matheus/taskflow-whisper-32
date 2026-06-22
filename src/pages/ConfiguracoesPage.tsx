@@ -202,6 +202,57 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
     }
   };
 
+  const handleConnectExisting = async () => {
+    if (!existingDisplayName.trim() || !existingInstanceName.trim()) {
+      toast.error("Preencha o nome e o ID da instância");
+      return;
+    }
+    if (!apiUrl.trim() || !apiKey.trim()) {
+      toast.error("Configure a URL e API Key primeiro");
+      return;
+    }
+
+    setIsConnectingExisting(true);
+    try {
+      const { data: profileData } = await supabase
+        .from("profiles").select("workspace_id")
+        .eq("user_id", (await supabase.auth.getUser()).data.user?.id).single();
+
+      const { data, error } = await supabase.functions.invoke("connect-evolution-instance", {
+        body: {
+          api_url: apiUrl.trim(),
+          api_key: apiKey.trim(),
+          instance_name: existingInstanceName.trim(),
+          name: existingDisplayName.trim(),
+          workspace_id: profileData?.workspace_id,
+        },
+      });
+
+      if (error || !data?.success) throw new Error(data?.error || error?.message || "Erro");
+
+      toast.success("Instância vinculada! ✅");
+      setActiveInstanceId(data.instance_id);
+      setShowExistingForm(false);
+      setExistingInstanceName("");
+      setExistingDisplayName("");
+
+      const { data: updated } = await supabase.from("whatsapp_instances").select("*").eq("is_active", true).order("created_at", { ascending: false });
+      setInstances(updated || []);
+
+      if (data.status === "connected") {
+        setViewMode("connected");
+      } else {
+        if (data.qr_code) setQrCode(data.qr_code);
+        setViewMode("qrcode");
+        startPolling(data.instance_id);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Erro ao vincular instância");
+    } finally {
+      setIsConnectingExisting(false);
+    }
+  };
+
   const handleDeleteInstance = async (id: string) => {
     try {
       await supabase.functions.invoke("delete-evolution-instance", { body: { instance_id: id } });
