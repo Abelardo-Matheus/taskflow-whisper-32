@@ -39,7 +39,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-2">
           <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shrink-0 overflow-hidden">
-            <img src="/waspeed-logo.png" alt="WaSpeed Logo" className="h-full w-full object-cover" />
+            <img src={`${import.meta.env.BASE_URL}waspeed-logo.png`} alt="WaSpeed Logo" className="h-full w-full object-cover" />
           </div>
           {!collapsed && <span className="font-heading text-lg font-bold text-foreground">WaSpeed KB</span>}
         </div>
