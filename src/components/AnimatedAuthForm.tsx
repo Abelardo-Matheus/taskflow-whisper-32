@@ -54,16 +54,16 @@ const AnimatedAuthForm = () => {
   return (
     <>
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
         .auth-wrapper {
           min-height: 100vh;
           display: flex;
           justify-content: center;
           align-items: center;
-          background: linear-gradient(90deg, #e2e2e2, #c9d6ff);
+          background: linear-gradient(135deg, #0f172a, #021a4a);
           padding: 20px;
-          font-family: "Poppins", sans-serif;
+          font-family: "Outfit", sans-serif;
         }
 
         .auth-container {
@@ -71,22 +71,23 @@ const AnimatedAuthForm = () => {
           width: 850px;
           max-width: 100%;
           height: 550px;
-          background: #fff;
+          background: #1e293b;
           border-radius: 30px;
-          box-shadow: 0 0 30px rgba(0, 0, 0, .2);
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.05);
           overflow: hidden;
         }
 
         .auth-container h1 {
-          font-size: 36px;
-          margin: -10px 0;
-          color: #333;
+          font-size: 32px;
+          margin: -10px 0 10px;
+          color: #ffffff;
+          font-weight: 600;
         }
 
         .auth-container p {
           font-size: 14.5px;
           margin: 15px 0;
-          color: #333;
+          color: #94a3b8;
         }
 
         .auth-form-box {
@@ -94,10 +95,10 @@ const AnimatedAuthForm = () => {
           right: 0;
           width: 50%;
           height: 100%;
-          background: #fff;
+          background: #1e293b;
           display: flex;
           align-items: center;
-          color: #333;
+          color: #ffffff;
           text-align: center;
           padding: 40px;
           z-index: 1;
@@ -122,23 +123,30 @@ const AnimatedAuthForm = () => {
 
         .auth-input-box {
           position: relative;
-          margin: 30px 0;
+          margin: 20px 0;
         }
 
         .auth-input-box input {
           width: 100%;
           padding: 13px 50px 13px 20px;
-          background: #eee;
+          background: rgba(15, 23, 42, 0.6);
           border-radius: 8px;
-          border: none;
+          border: 1px solid rgba(255, 255, 255, 0.1);
           outline: none;
-          font-size: 16px;
-          color: #333;
-          font-weight: 500;
+          font-size: 15px;
+          color: #ffffff;
+          font-weight: 400;
+          font-family: "Outfit", sans-serif;
+          transition: all 0.3s ease;
+        }
+
+        .auth-input-box input:focus {
+          border-color: #023A9E;
+          box-shadow: 0 0 0 3px rgba(2, 58, 158, 0.2);
         }
 
         .auth-input-box input::placeholder {
-          color: #888;
+          color: #64748b;
           font-weight: 400;
         }
 
@@ -147,31 +155,43 @@ const AnimatedAuthForm = () => {
           right: 20px;
           top: 50%;
           transform: translateY(-50%);
-          color: #333;
+          color: #94a3b8;
         }
 
         .auth-forgot-link {
-          margin: -15px 0 15px;
+          margin: -10px 0 20px;
         }
 
         .auth-forgot-link a {
-          font-size: 14.5px;
-          color: #333;
+          font-size: 13px;
+          color: #E81C24;
           text-decoration: none;
+          transition: color 0.2s;
+        }
+
+        .auth-forgot-link a:hover {
+          color: #ff3b44;
+          text-decoration: underline;
         }
 
         .auth-btn {
           width: 100%;
           height: 48px;
-          background: #7494ec;
+          background: #E81C24;
           border-radius: 8px;
-          box-shadow: 0 0 10px rgba(0, 0, 0, .1);
+          box-shadow: 0 4px 15px rgba(232, 28, 36, 0.3);
           border: none;
           cursor: pointer;
           font-size: 16px;
           color: #fff;
           font-weight: 600;
-          transition: opacity .2s;
+          font-family: "Outfit", sans-serif;
+          transition: all 0.2s;
+        }
+
+        .auth-btn:hover:not(:disabled) {
+          background: #c2131b;
+          transform: translateY(-1px);
         }
 
         .auth-btn:disabled {
@@ -191,7 +211,7 @@ const AnimatedAuthForm = () => {
           left: -250%;
           width: 300%;
           height: 100%;
-          background: #7494ec;
+          background: linear-gradient(135deg, #023A9E, #011f56);
           border-radius: 150px;
           z-index: 2;
           transition: 1.8s ease-in-out;
@@ -321,7 +341,13 @@ const AnimatedAuthForm = () => {
           {/* Login Form */}
           <div className="auth-form-box login">
             <form className="auth-form-inner" onSubmit={handleLogin}>
-              <h1>Login</h1>
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center p-2 shadow-lg border border-white/10">
+                  <img src={`${import.meta.env.BASE_URL}waspeed-logo.png`} alt="WaSpeed Logo" className="w-full h-full object-contain" />
+                </div>
+              </div>
+              <h1>Bem-vindo de volta</h1>
+              <p className="mb-6">Acesse seu painel do WaSpeed KB</p>
               <div className="auth-input-box">
                 <input
                   type="email"
@@ -355,7 +381,13 @@ const AnimatedAuthForm = () => {
           {/* Register Form */}
           <div className="auth-form-box register">
             <form className="auth-form-inner" onSubmit={handleRegister}>
-              <h1>Cadastro</h1>
+              <div className="flex justify-center mb-6">
+                <div className="w-16 h-16 rounded-xl bg-primary flex items-center justify-center p-2 shadow-lg border border-white/10">
+                  <img src={`${import.meta.env.BASE_URL}waspeed-logo.png`} alt="WaSpeed Logo" className="w-full h-full object-contain" />
+                </div>
+              </div>
+              <h1>Criar Conta</h1>
+              <p className="mb-4">Junte-se à nossa plataforma</p>
               <div className="auth-input-box">
                 <input
                   type="text"
@@ -396,19 +428,25 @@ const AnimatedAuthForm = () => {
           {/* Toggle Box */}
           <div className="auth-toggle-box">
             <div className="auth-toggle-panel toggle-left">
-              <h1>Olá, bem-vindo!</h1>
-              <p>Não tem uma conta?</p>
+              <div className="mb-8 w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 p-3 mx-auto shadow-2xl">
+                <img src={`${import.meta.env.BASE_URL}waspeed-logo.png`} alt="WaSpeed Logo" className="w-full h-full object-contain" />
+              </div>
+              <h1>Olá, visitante!</h1>
+              <p>Ainda não possui uma conta no WaSpeed KB?</p>
               <button
                 type="button"
                 className="auth-btn"
                 onClick={() => setIsActive(true)}
               >
-                Cadastrar
+                Cadastrar agora
               </button>
             </div>
             <div className="auth-toggle-panel toggle-right">
-              <h1>Bem-vindo de volta!</h1>
-              <p>Já tem uma conta?</p>
+              <div className="mb-8 w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center backdrop-blur-md border border-white/20 p-3 mx-auto shadow-2xl">
+                <img src={`${import.meta.env.BASE_URL}waspeed-logo.png`} alt="WaSpeed Logo" className="w-full h-full object-contain" />
+              </div>
+              <h1>Bem-vindo!</h1>
+              <p>Já faz parte do nosso time de gestão?</p>
               <button
                 type="button"
                 className="auth-btn"
