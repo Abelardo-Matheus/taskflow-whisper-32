@@ -86,7 +86,7 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
         e.dataTransfer.effectAllowed = "move";
       }}
       className={cn(
-        "group cursor-pointer rounded-lg border bg-card p-3 transition-all hover:bg-kanban-card-hover hover:shadow-md",
+        "group cursor-pointer rounded-lg border bg-card p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-elevation-3 hover:border-primary/40",
         overdue && "border-status-overdue/30",
         (hasKanbanOverdue || hasTotalOverdue) && "border-destructive border-2"
       )}

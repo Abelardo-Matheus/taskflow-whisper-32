@@ -37,7 +37,7 @@ export function AppLayout({ children }: AppLayoutProps) {
       <div className="min-h-screen flex w-full">
         <AppSidebar />
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="h-12 flex items-center border-b px-4 shrink-0">
+          <header className="h-12 flex items-center border-b px-4 shrink-0 bg-background/80 backdrop-blur-md sticky top-0 z-50 transition-colors">
             <SidebarTrigger />
           </header>
           <main className="flex-1 overflow-auto">

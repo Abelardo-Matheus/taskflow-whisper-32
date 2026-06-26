@@ -11,6 +11,11 @@ import { NewCollectionModal } from "@/components/NewCollectionModal";
 import { DeleteCollectionDialog } from "@/components/DeleteCollectionDialog";
 import { KanbanColumnHeader } from "@/components/KanbanColumnHeader";
 import { TimeLimitModal } from "@/components/TimeLimitModal";
+import { useViewConfig } from "@/hooks/useViewConfig";
+import { ListView } from "@/components/views/list/ListView";
+import { KanbanBoardView } from "@/components/views/board/KanbanBoardView";
+import { LayoutList, Kanban, AlignLeft } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   useCollections, useColumns, useTasks, useAllTasks, useCreateTask, useUpdateTask,
   useCreateCollectionWithColumns, useDeleteCollection, useSaveLastCollection,
@@ -58,6 +63,10 @@ export default function KanbanPage() {
   const [dragColumnId, setDragColumnId] = useState<string | null>(null);
   // Filters
   const [filters, setFilters] = useState<KanbanFilterState>({ assignee: "all", priority: "all", deadline: "all" });
+  
+  // View Config
+  const viewConfig = useViewConfig(activeCollection);
+
   // Time modal state
   const [timeLimitModal, setTimeLimitModal] = useState<{
     open: boolean;
@@ -480,6 +489,18 @@ export default function KanbanPage() {
             onManage={() => navigate("/configuracoes")}
             userRole={userRole}
           />
+          
+          <div className="mx-4 h-6 w-px bg-border" />
+          
+          <ToggleGroup type="single" value={viewConfig.config.currentView} onValueChange={(val) => val && viewConfig.setView(val as any)}>
+            <ToggleGroupItem value="board" aria-label="Kanban View" title="Quadro Kanban">
+              <Kanban className="w-4 h-4 mr-2" /> Quadro
+            </ToggleGroupItem>
+            <ToggleGroupItem value="list" aria-label="List View" title="Lista">
+              <LayoutList className="w-4 h-4 mr-2" /> Lista
+            </ToggleGroupItem>
+          </ToggleGroup>
+
           <Button variant="outline" size="sm" onClick={handleQuickCreate} disabled={!collectionId} className="gap-1.5">
             <Plus className="h-4 w-4" /> Nova Task
           </Button>
@@ -493,135 +514,62 @@ export default function KanbanPage() {
         {/* Filters bar */}
         <KanbanFilters filters={filters} onChange={setFilters} profiles={profilesList || []} />
 
-        {/* Kanban board */}
-        <div className="flex-1 overflow-x-auto p-6">
-          <div className="flex gap-4 h-full">
-            {cols?.map(column => {
-              const colTasks = filteredTasks.filter(t => t.column_id === column.id);
-              const hasConnection = connections?.some(c => c.source_column_id === column.id) || false;
-              const overdueCount = colTasks.filter(t => isOverdue(t.due_date)).length;
-              const otherColumns = cols.filter(c => c.id !== column.id);
-              const colColor = (column as any).color as string | null;
-              const collectionColor = (collections?.find(c => c.id === collectionId) as any)?.color as string | null;
-              const wipLimit = (column as any).wip_limit || 0;
-              const isOverWip = wipLimit > 0 && colTasks.length >= wipLimit;
-              const borderStyle: React.CSSProperties = {};
-              if (colColor) borderStyle.borderTop = `3px solid ${colColor}`;
-              if (collectionColor) borderStyle.borderLeft = `3px solid ${collectionColor}`;
-
-              return (
-                <div
-                  key={column.id}
-                  className={cn(
-                    "flex w-72 shrink-0 flex-col rounded-xl bg-kanban-column p-3 transition-opacity relative overflow-hidden",
-                    dragColumnId === column.id && "opacity-50",
-                    isOverWip && "ring-2 ring-destructive/30"
-                  )}
-                  style={Object.keys(borderStyle).length > 0 ? borderStyle : undefined}
-                  onDragOver={(e) => e.preventDefault()}
-                  onDrop={(e) => {
-                    if (e.dataTransfer.getData("column-id")) {
-                      handleColumnDrop(e, column.id);
-                    } else {
-                      handleTaskDrop(e, column.id);
-                    }
-                  }}
-                >
-                  <KanbanColumnHeader
-                    column={column}
-                    taskCount={colTasks.length}
-                    overdueCount={overdueCount}
-                    hasConnection={hasConnection}
-                    isManager={isManager}
-                    totalColumns={cols.length}
-                    otherColumns={otherColumns}
-                    collections={collections || []}
-                    currentCollectionId={collectionId!}
-                    allColumns={allColumns || []}
-                    connections={connections || []}
-                    automations={automations || []}
-                    profiles={profilesList || []}
-                    onRename={handleRenameColumn}
-                    onDelete={handleDeleteColumn}
-                    onAddTask={(colId) => { setNewTaskColumnId(colId); setNewTaskModalOpen(true); }}
-                    onUpdateColumn={(id, updates) => updateColumn.mutate({ id, ...updates })}
-                    onCreateConnection={(sourceId, targetId) => { createConnection.mutate({ source_column_id: sourceId, target_column_id: targetId }, { onSuccess: () => toast.success("Conexão criada!"), onError: (err: any) => toast.error("Erro ao criar conexão: " + err.message) }); }}
-                    onDeleteConnection={(id) => { deleteConnectionMut.mutate(id, { onSuccess: () => toast.success("Conexão removida!"), onError: (err: any) => toast.error("Erro ao remover conexão: " + err.message) }); }}
-                    onUpdateConnectionTimeOptions={(id, timeOptions) => { updateConnectionMut.mutate({ id, time_options: timeOptions }, { onSuccess: () => toast.success("Opções de tempo atualizadas!"), onError: (err: any) => toast.error("Erro: " + err.message) }); }}
-                    onUpdateConnectionAssignee={(id, config) => { updateConnectionMut.mutate({ id, assignee_config: config }, { onSuccess: () => toast.success("Responsável configurado!"), onError: (err: any) => toast.error("Erro: " + err.message) }); }}
-                    onCreateAutomation={(colId, type, value) => { createAutomation.mutate({ column_id: colId, type, value }, { onSuccess: () => toast.success("Automação criada!"), onError: (err: any) => toast.error("Erro ao criar automação: " + err.message) }); }}
-                    onDeleteAutomation={(id) => { deleteAutomation.mutate(id, { onSuccess: () => toast.success("Automação removida!"), onError: (err: any) => toast.error("Erro ao remover automação: " + err.message) }); }}
-                    onDragStart={handleColumnDragStart}
-                    onDragOver={handleColumnDragOver}
-                    onDrop={handleColumnDrop}
-                  />
-
-                  <div className="flex-1 space-y-2 overflow-y-auto scrollbar-thin">
-                    {colTasks.map(task => {
-                      const linked = getLinkedInfo(task);
-                      const taskProjectName = (task as any).project_id
-                        ? projectsList?.find(p => p.id === (task as any).project_id)?.name || null
-                        : null;
-                      const taskHistory = kanbanHistory?.filter(h => h.task_id === task.id) || [];
-                      return (
-                        <TaskCard
-                          key={task.id}
-                          task={task}
-                          onClick={setSelectedTask}
-                          showLinked={!!task.linked_task_id}
-                          linkedCollectionName={linked.name}
-                          linkedDirection={linked.direction}
-                          projectName={taskProjectName}
-                          kanbanHistory={taskHistory}
-                          dailyWorkHours={wsSettings?.daily_work_hours || 8}
-                          weekendDays={wsSettings?.weekend_days || [0, 6]}
-                          holidays={wsHolidays?.map(h => h.holiday_date) || []}
-                        />
-                      );
-                    })}
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Add column inline — only for admin/gestor */}
-            {collectionId && isManager && (
-              <div className="flex w-72 shrink-0 flex-col items-center justify-start pt-3">
-                {showInlineAdd ? (
-                  <div className="w-full rounded-xl bg-kanban-column p-3">
-                    <Input
-                      autoFocus
-                      placeholder="Nome da coluna…"
-                      value={inlineAddCol}
-                      onChange={(e) => setInlineAddCol(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") handleAddColumn();
-                        if (e.key === "Escape") { setShowInlineAdd(false); setInlineAddCol(""); }
-                      }}
-                      onBlur={() => {
-                        if (!inlineAddCol.trim()) { setShowInlineAdd(false); setInlineAddCol(""); }
-                      }}
-                      className="h-8 text-sm"
-                    />
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setShowInlineAdd(true)}
-                    className="flex items-center gap-1.5 rounded-xl border border-dashed border-border px-4 py-2 text-sm text-muted-foreground hover:bg-accent hover:text-foreground transition-colors w-full justify-center"
-                  >
-                    <Plus className="h-4 w-4" /> Coluna
-                  </button>
-                )}
-              </div>
-            )}
-
-            {(!cols || cols.length === 0) && !collectionId && (
-              <div className="flex items-center justify-center flex-1 text-muted-foreground">
-                <p>Nenhuma coluna. Adicione uma para começar!</p>
-              </div>
-            )}
-          </div>
-        </div>
+        {/* Views */}
+        {viewConfig.config.currentView === "list" ? (
+          <ListView 
+            tasks={filteredTasks}
+            columns={cols || []}
+            profiles={profilesList || []}
+            projects={projectsList || []}
+            groupBy={viewConfig.config.groupBy}
+            collapsedGroups={viewConfig.config.collapsedGroups}
+            onToggleCollapse={viewConfig.toggleGroupCollapse}
+            onUpdateTask={(id, updates) => updateTask.mutate({ id, ...updates })}
+            onClickTask={setSelectedTask}
+            onBulkUpdate={() => {}}
+            onBulkDelete={(ids) => { ids.forEach(id => updateTask.mutate({ id, is_archived: true })) }} // Simplification for now
+          />
+        ) : (
+          <KanbanBoardView
+            cols={cols || []}
+            filteredTasks={filteredTasks}
+            connections={connections || []}
+            collectionId={collectionId!}
+            isManager={isManager}
+            allColumns={allColumns || []}
+            automations={automations || []}
+            profilesList={profilesList || []}
+            projectsList={projectsList || []}
+            kanbanHistory={kanbanHistory || []}
+            wsSettings={wsSettings}
+            wsHolidays={wsHolidays || []}
+            viewConfig={viewConfig}
+            dragColumnId={dragColumnId}
+            isOverdue={isOverdue}
+            getLinkedInfo={getLinkedInfo}
+            handleColumnDrop={handleColumnDrop}
+            handleTaskDrop={handleTaskDrop}
+            handleColumnDragStart={handleColumnDragStart}
+            handleColumnDragOver={handleColumnDragOver}
+            handleRenameColumn={handleRenameColumn}
+            handleDeleteColumn={handleDeleteColumn}
+            setNewTaskColumnId={setNewTaskColumnId}
+            setNewTaskModalOpen={setNewTaskModalOpen}
+            updateColumn={updateColumn}
+            createConnection={createConnection}
+            deleteConnectionMut={deleteConnectionMut}
+            updateConnectionMut={updateConnectionMut}
+            createAutomation={createAutomation}
+            deleteAutomation={deleteAutomation}
+            setSelectedTask={setSelectedTask}
+            showInlineAdd={showInlineAdd}
+            setShowInlineAdd={setShowInlineAdd}
+            inlineAddCol={inlineAddCol}
+            setInlineAddCol={setInlineAddCol}
+            handleAddColumn={handleAddColumn}
+            collections={collections || []}
+          />
+        )}
       </div>
 
       <TaskDetailPanel task={currentSelectedTask} columns={cols || []} profiles={profilesList || []} onClose={() => setSelectedTask(null)} />

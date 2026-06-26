@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -7,29 +7,29 @@
 @layer base {
   :root {
     /* ── Base (Light) ── */
-    --background: 0 0% 93%;
-    --foreground: 213 96% 9%;
+    --background: 210 40% 98%; /* #f8fafc */
+    --foreground: 222 47% 11%; /* #0f172a */
 
-    --card: 0 0% 98%;
-    --card-foreground: 213 96% 9%;
+    --card: 0 0% 100%; /* #ffffff */
+    --card-foreground: 222 47% 11%;
 
-    --popover: 0 0% 98%;
-    --popover-foreground: 213 96% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
 
-    --primary: 213 96% 9%;
+    --primary: 218 96% 31%; /* #023A9E - WaSpeed Deep Blue */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 0 0% 96%;
-    --secondary-foreground: 213 96% 9%;
+    --secondary: 214 32% 91%; /* #e2e8f0 */
+    --secondary-foreground: 222 47% 11%;
 
-    --muted: 0 0% 89%;
-    --muted-foreground: 213 40% 30%;
+    --muted: 210 40% 96.1%; /* #f1f5f9 */
+    --muted-foreground: 215.4 16.3% 46.9%; /* #64748b */
 
-    --accent: 239 84% 67%;
+    --accent: 358 84% 51%; /* #E81C24 - WaSpeed Red */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 358 84% 51%;
+    --destructive-foreground: 0 0% 100%;
 
     --success: 160 84% 39%;
     --success-foreground: 0 0% 100%;
@@ -37,11 +37,11 @@
     --warning: 43 96% 56%;
     --warning-foreground: 0 0% 100%;
 
-    --border: 0 0% 82%;
-    --input: 0 0% 82%;
-    --ring: 239 84% 67%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 218 96% 31%; /* WaSpeed Deep Blue */
 
-    --radius: 0.625rem;
+    --radius: 0.75rem; /* Smoother, larger radius */
 
     /* ── Sidebar (Light) ── */
     --sidebar-background: 213 96% 6%;
@@ -54,15 +54,15 @@
     --sidebar-ring: 239 84% 67%;
 
     /* ── TaskAI semantic tokens ── */
-    --status-overdue: 0 84% 60%;
+    --status-overdue: 358 84% 51%;
     --status-on-track: 160 84% 39%;
     --status-attention: 43 96% 56%;
-    --status-neutral: 213 20% 50%;
+    --status-neutral: 215.4 16.3% 46.9%;
 
-    --priority-urgent: 0 84% 60%;
+    --priority-urgent: 358 84% 51%;
     --priority-high: 25 95% 53%;
-    --priority-medium: 239 84% 67%;
-    --priority-low: 213 20% 55%;
+    --priority-medium: 218 96% 31%;
+    --priority-low: 215.4 16.3% 46.9%;
 
     --kanban-column: 0 0% 96%;
     --kanban-card-hover: 0 0% 89%;
@@ -72,39 +72,39 @@
 
   .dark {
     /* ── Base (Dark — Navy) ── */
-    --background: 213 96% 6%;
-    --foreground: 240 20% 95%;
+    --background: 222 47% 11%; /* #0f172a */
+    --foreground: 210 40% 98%; /* #f8fafc */
 
-    --card: 213 70% 11%;
-    --card-foreground: 240 20% 95%;
+    --card: 222 47% 14%; /* Slightly lighter than background */
+    --card-foreground: 210 40% 98%;
 
-    --popover: 213 70% 11%;
-    --popover-foreground: 240 20% 95%;
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
 
-    --primary: 239 84% 67%;
+    --primary: 218 96% 51%; /* WaSpeed Deep Blue lightened for dark mode contrast */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 213 50% 14%;
-    --secondary-foreground: 240 20% 95%;
+    --secondary: 217.2 32.6% 17.5%; /* #1e293b */
+    --secondary-foreground: 210 40% 98%;
 
-    --muted: 213 50% 14%;
-    --muted-foreground: 240 10% 65%;
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%; /* #94a3b8 */
 
-    --accent: 239 84% 67%;
+    --accent: 358 84% 56%; /* WaSpeed Red slightly brighter */
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 72% 56%;
+    --destructive: 358 84% 56%;
     --destructive-foreground: 0 0% 100%;
 
     --success: 160 84% 45%;
     --success-foreground: 0 0% 100%;
 
-    --warning: 43 96% 65%;
-    --warning-foreground: 213 96% 9%;
+    --warning: 43 96% 56%;
+    --warning-foreground: 0 0% 100%;
 
-    --border: 213 40% 16%;
-    --input: 213 40% 16%;
-    --ring: 239 84% 67%;
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 218 96% 51%;
 
     /* ── Sidebar (Dark) ── */
     --sidebar-background: 213 96% 4%;
@@ -117,15 +117,15 @@
     --sidebar-ring: 239 84% 67%;
 
     /* ── TaskAI semantic tokens (Dark) ── */
-    --status-overdue: 0 72% 56%;
+    --status-overdue: 358 84% 56%;
     --status-on-track: 160 84% 45%;
-    --status-attention: 43 96% 65%;
-    --status-neutral: 240 10% 65%;
+    --status-attention: 43 96% 56%;
+    --status-neutral: 215 20.2% 65.1%;
 
-    --priority-urgent: 0 72% 56%;
-    --priority-high: 25 95% 58%;
-    --priority-medium: 239 84% 67%;
-    --priority-low: 240 10% 65%;
+    --priority-urgent: 358 84% 56%;
+    --priority-high: 25 95% 53%;
+    --priority-medium: 218 96% 51%;
+    --priority-low: 215 20.2% 65.1%;
 
     --kanban-column: 213 70% 9%;
     --kanban-card-hover: 213 50% 14%;

@@ -26,14 +26,14 @@ export interface OnboardingStatus {
 const WIZARD_SEEN_KEY = "taskai_onboarding_wizard_seen";
 
 const INITIAL_STEPS: OnboardingStep[] = [
-  { id: "welcome", title: "Boas-vindas", description: "Conheça o TaskAI", isComplete: false, isRequired: false },
+  { id: "welcome", title: "Boas-vindas", description: "Conheça o WaSpeed KB", isComplete: false, isRequired: false },
   { id: "workspace", title: "Workspace", description: "Nome do seu workspace", isComplete: false, isRequired: true },
   { id: "profile", title: "Perfil", description: "Seu nome e telefone", isComplete: false, isRequired: true },
   { id: "sectors", title: "Setores", description: "Crie ao menos um setor", isComplete: false, isRequired: true },
   { id: "collection", title: "Coleção", description: "Crie sua primeira coleção (board)", isComplete: false, isRequired: true },
   { id: "team", title: "Equipe", description: "Convide colegas (opcional)", isComplete: false, isRequired: false },
-  { id: "whatsapp", title: "WhatsApp", description: "Evolution API + QR Code (opcional)", isComplete: false, isRequired: false },
-  { id: "slack", title: "Slack", description: "Configure /taskai (opcional)", isComplete: false, isRequired: false },
+  { id: "whatsapp", title: "WhatsApp", description: "API Oficial da Meta (opcional)", isComplete: false, isRequired: false },
+  { id: "slack", title: "Slack", description: "Configure /waspeedkb (opcional)", isComplete: false, isRequired: false },
   { id: "notifications", title: "Notificações", description: "Suas preferências", isComplete: false, isRequired: false },
   { id: "finish", title: "Pronto!", description: "Revise e comece a usar", isComplete: false, isRequired: false },
 ];

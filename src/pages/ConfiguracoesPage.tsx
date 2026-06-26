@@ -30,29 +30,15 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
   const [phoneNumber, setPhoneNumber] = useState(profile?.phone || "");
   const [whatsappNotifs, setWhatsappNotifs] = useState(profile?.whatsapp_notifications || false);
 
-  // Evolution API credentials
-  const [apiUrl, setApiUrl] = useState("");
-  const [apiKey, setApiKey] = useState("");
-  const [isTesting, setIsTesting] = useState(false);
-  const [testResult, setTestResult] = useState<{ ok: boolean; message: string } | null>(null);
-
-  // Instance management
+  // Meta API credentials
+  const [phoneId, setPhoneId] = useState("");
+  const [verifyToken, setVerifyToken] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [displayName, setDisplayName] = useState("");
+  
+  const [isSaving, setIsSaving] = useState(false);
   const [instances, setInstances] = useState<any[]>([]);
   const [loadingInstances, setLoadingInstances] = useState(true);
-  const [instanceName, setInstanceName] = useState("");
-  const [displayName, setDisplayName] = useState("");
-  const [isCreating, setIsCreating] = useState(false);
-  const [isConnectingExisting, setIsConnectingExisting] = useState(false);
-  const [showExistingForm, setShowExistingForm] = useState(false);
-  const [existingInstanceName, setExistingInstanceName] = useState("");
-  const [existingDisplayName, setExistingDisplayName] = useState("");
-  const [qrCode, setQrCode] = useState<string | null>(null);
-  const [activeInstanceId, setActiveInstanceId] = useState<string | null>(null);
-  const [isFetchingQr, setIsFetchingQr] = useState(false);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  type ViewMode = "setup" | "instances" | "creating" | "qrcode" | "connected";
-  const [viewMode, setViewMode] = useState<ViewMode>("setup");
 
   // Load instances
   useEffect(() => {
@@ -64,204 +50,58 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
         .eq("is_active", true)
         .order("created_at", { ascending: false });
 
-      const list = data || [];
-      setInstances(list);
-
-      const connected = list.find((i: any) => i.status === "connected");
-      if (connected) {
-        setActiveInstanceId(connected.id);
-        setViewMode("connected");
-      } else if (list.length > 0) {
-        setViewMode("instances");
-      } else {
-        setViewMode("setup");
-      }
+      setInstances(data || []);
       setLoadingInstances(false);
     };
     load();
   }, []);
 
-  const stopPolling = useCallback(() => {
-    if (pollingRef.current) {
-      clearInterval(pollingRef.current);
-      pollingRef.current = null;
+  const handleSaveConfig = async () => {
+    if (!displayName.trim() || !phoneId.trim() || !verifyToken.trim() || !accessToken.trim()) {
+      toast.error("Preencha todos os campos");
+      return;
     }
-  }, []);
 
-  useEffect(() => () => stopPolling(), [stopPolling]);
-
-  const fetchQr = useCallback(async (id: string) => {
-    setIsFetchingQr(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("get-evolution-qrcode", {
-        body: { instance_id: id },
-      });
-      if (error) throw error;
-      if (data?.connected) {
-        setQrCode(null);
-        setViewMode("connected");
-        stopPolling();
-        // Reload instances
-        const { data: updated } = await supabase.from("whatsapp_instances").select("*").eq("is_active", true).order("created_at", { ascending: false });
-        setInstances(updated || []);
-        toast.success("WhatsApp conectado! ✅");
-      } else if (data?.qr_code) {
-        setQrCode(data.qr_code);
-      }
-    } catch (err) {
-      console.warn("QR fetch error:", err);
-    } finally {
-      setIsFetchingQr(false);
-    }
-  }, [stopPolling]);
-
-  const startPolling = useCallback((id: string) => {
-    stopPolling();
-    pollingRef.current = setInterval(() => fetchQr(id), 5000);
-  }, [fetchQr, stopPolling]);
-
-  const handleTestConnection = async () => {
-    if (!apiUrl.trim() || !apiKey.trim()) { toast.error("Preencha URL e API Key"); return; }
-    setIsTesting(true);
-    setTestResult(null);
-    try {
-      const { data, error } = await supabase.functions.invoke("test-evolution-connection", {
-        body: { api_url: apiUrl.trim(), api_key: apiKey.trim() },
-      });
-      if (error) throw error;
-      if (data?.success) {
-        setTestResult({ ok: true, message: "Conexão estabelecida!" });
-        toast.success("Evolution API conectada! ✅");
-      } else {
-        setTestResult({ ok: false, message: data?.error || "Falha" });
-      }
-    } catch {
-      setTestResult({ ok: false, message: "Erro de conexão" });
-    } finally {
-      setIsTesting(false);
-    }
-  };
-
-  const handleDisplayNameChange = (val: string) => {
-    setDisplayName(val);
-    setInstanceName(val.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9_-]/g, ""));
-  };
-
-  const handleCreateInstance = async () => {
-    if (!displayName.trim() || !instanceName.trim()) { toast.error("Preencha o nome da conexão"); return; }
-    if (!apiUrl.trim() || !apiKey.trim()) { toast.error("Configure a URL e API Key primeiro"); return; }
-
-    setIsCreating(true);
-    setViewMode("creating");
-
+    setIsSaving(true);
     try {
       const { data: profileData } = await supabase.from("profiles").select("workspace_id").eq("user_id", (await supabase.auth.getUser()).data.user?.id).single();
 
-      const { data, error } = await supabase.functions.invoke("create-evolution-instance", {
+      const { data, error } = await supabase.functions.invoke("save-whatsapp-config", {
         body: {
-          api_url: apiUrl.trim(),
-          api_key: apiKey.trim(),
-          instance_name: instanceName,
-          name: displayName,
+          phone_id: phoneId.trim(),
+          verify_token: verifyToken.trim(),
+          access_token: accessToken.trim(),
+          name: displayName.trim(),
           workspace_id: profileData?.workspace_id,
         },
       });
 
       if (error || !data?.success) throw new Error(data?.error || error?.message || "Erro");
 
-      setActiveInstanceId(data.instance_id);
-      if (data.qr_code) {
-        setQrCode(data.qr_code);
-        setViewMode("qrcode");
-        startPolling(data.instance_id);
-      } else {
-        setViewMode("qrcode");
-        await fetchQr(data.instance_id);
-        startPolling(data.instance_id);
-      }
+      toast.success("WhatsApp conectado com sucesso! ✅");
+      
+      // Clear form
+      setPhoneId("");
+      setVerifyToken("");
+      setAccessToken("");
+      setDisplayName("");
 
       // Reload instances
       const { data: updated } = await supabase.from("whatsapp_instances").select("*").eq("is_active", true).order("created_at", { ascending: false });
       setInstances(updated || []);
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao criar instância");
-      setViewMode("instances");
+      toast.error(err instanceof Error ? err.message : "Erro ao salvar configurações");
     } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const handleSelectInstance = (inst: any) => {
-    setActiveInstanceId(inst.id);
-    if (inst.status === "connected") {
-      setViewMode("connected");
-    } else {
-      setViewMode("qrcode");
-      fetchQr(inst.id);
-      startPolling(inst.id);
-    }
-  };
-
-  const handleConnectExisting = async () => {
-    if (!existingDisplayName.trim() || !existingInstanceName.trim()) {
-      toast.error("Preencha o nome e o ID da instância");
-      return;
-    }
-    if (!apiUrl.trim() || !apiKey.trim()) {
-      toast.error("Configure a URL e API Key primeiro");
-      return;
-    }
-
-    setIsConnectingExisting(true);
-    try {
-      const { data: profileData } = await supabase
-        .from("profiles").select("workspace_id")
-        .eq("user_id", (await supabase.auth.getUser()).data.user?.id).single();
-
-      const { data, error } = await supabase.functions.invoke("connect-evolution-instance", {
-        body: {
-          api_url: apiUrl.trim(),
-          api_key: apiKey.trim(),
-          instance_name: existingInstanceName.trim(),
-          name: existingDisplayName.trim(),
-          workspace_id: profileData?.workspace_id,
-        },
-      });
-
-      if (error || !data?.success) throw new Error(data?.error || error?.message || "Erro");
-
-      toast.success("Instância vinculada! ✅");
-      setActiveInstanceId(data.instance_id);
-      setShowExistingForm(false);
-      setExistingInstanceName("");
-      setExistingDisplayName("");
-
-      const { data: updated } = await supabase.from("whatsapp_instances").select("*").eq("is_active", true).order("created_at", { ascending: false });
-      setInstances(updated || []);
-
-      if (data.status === "connected") {
-        setViewMode("connected");
-      } else {
-        if (data.qr_code) setQrCode(data.qr_code);
-        setViewMode("qrcode");
-        startPolling(data.instance_id);
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Erro ao vincular instância");
-    } finally {
-      setIsConnectingExisting(false);
+      setIsSaving(false);
     }
   };
 
   const handleDeleteInstance = async (id: string) => {
+    if (!confirm("Tem certeza que deseja remover esta conexão? O webhook vai parar de funcionar.")) return;
     try {
-      await supabase.functions.invoke("delete-evolution-instance", { body: { instance_id: id } });
+      await supabase.from("whatsapp_instances").update({ is_active: false }).eq("id", id);
       setInstances(prev => prev.filter(i => i.id !== id));
-      if (activeInstanceId === id) {
-        setActiveInstanceId(null);
-        setViewMode("setup");
-      }
-      toast.success("Instância removida");
+      toast.success("Conexão removida");
     } catch {
       toast.error("Erro ao remover");
     }
@@ -315,47 +155,12 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
         </div>
       </div>
 
-      {/* Evolution API Setup */}
-      <div className="rounded-xl border bg-card p-6 space-y-6">
-        <div>
-          <h3 className="font-heading text-base font-semibold text-card-foreground mb-1">Evolution API</h3>
-          <p className="text-sm text-muted-foreground">Configure a conexão com sua Evolution API para gerenciar o WhatsApp.</p>
-        </div>
-
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Globe className="h-3.5 w-3.5" /> URL da Evolution API
-            </label>
-            <Input value={apiUrl} onChange={(e) => { setApiUrl(e.target.value); setTestResult(null); }} placeholder="https://sua-evolution-api.com" className="font-mono text-sm" />
-          </div>
-          <div className="space-y-2">
-            <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
-              <Key className="h-3.5 w-3.5" /> API Key
-            </label>
-            <Input type="password" value={apiKey} onChange={(e) => { setApiKey(e.target.value); setTestResult(null); }} placeholder="Sua chave de API" className="font-mono text-sm" />
-          </div>
-
-          {testResult && (
-            <div className={`flex items-center gap-2 p-3 rounded-lg border text-sm ${testResult.ok ? "bg-primary/10 border-primary/20 text-primary" : "bg-destructive/10 border-destructive/20 text-destructive"}`}>
-              {testResult.ok ? <CheckCircle className="h-4 w-4 shrink-0" /> : <AlertTriangle className="h-4 w-4 shrink-0" />}
-              {testResult.message}
-            </div>
-          )}
-
-          <Button variant="outline" onClick={handleTestConnection} disabled={isTesting || !apiUrl.trim() || !apiKey.trim()} className="w-full gap-2">
-            {isTesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Wifi className="h-4 w-4" />}
-            {isTesting ? "Testando..." : "Testar Conexão"}
-          </Button>
-        </div>
-      </div>
-
-      {/* Instance Management */}
+      {/* Meta API Setup */}
       <div className="rounded-xl border bg-card p-6 space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="font-heading text-base font-semibold text-card-foreground mb-1">Instâncias WhatsApp</h3>
-            <p className="text-sm text-muted-foreground">Crie e gerencie suas conexões WhatsApp.</p>
+            <h3 className="font-heading text-base font-semibold text-card-foreground mb-1">WhatsApp Oficial (Meta)</h3>
+            <p className="text-sm text-muted-foreground">Configure a conexão direta com a API da Meta (WhatsApp Cloud API).</p>
           </div>
           {connectedInstance && (
             <div className="flex items-center gap-2 text-sm text-primary bg-primary/10 px-3 py-1.5 rounded-full">
@@ -364,61 +169,14 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
           )}
         </div>
 
-        {/* Connected state */}
-        {viewMode === "connected" && connectedInstance && (
-          <div className="rounded-xl border-2 border-primary/30 bg-primary/5 p-6 text-center space-y-3">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-              <CheckCircle className="h-7 w-7 text-primary" />
-            </div>
-            <h4 className="font-semibold text-card-foreground">{connectedInstance.name}</h4>
-            <p className="text-sm text-muted-foreground">WhatsApp conectado e pronto para uso</p>
-            {connectedInstance.phone_number && (
-              <p className="text-xs text-muted-foreground">{connectedInstance.phone_number}</p>
-            )}
-          </div>
-        )}
-
-        {/* QR Code view */}
-        {viewMode === "qrcode" && (
-          <div className="rounded-xl border bg-muted/30 p-6 text-center space-y-4">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-muted flex items-center justify-center">
-              <QrCode className="h-7 w-7 text-muted-foreground" />
-            </div>
-            <h4 className="font-semibold text-card-foreground">Escaneie o QR Code</h4>
-            <p className="text-sm text-muted-foreground">Abra o WhatsApp no celular → Menu → Aparelhos conectados → Conectar</p>
-
-            {qrCode ? (
-              <div className="bg-white rounded-xl p-4 inline-block mx-auto">
-                <img src={qrCode.startsWith("data:") ? qrCode : `data:image/png;base64,${qrCode}`} alt="QR Code" className="w-56 h-56" />
-              </div>
-            ) : (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              </div>
-            )}
-
-            <Button variant="outline" size="sm" onClick={() => activeInstanceId && fetchQr(activeInstanceId)} disabled={isFetchingQr} className="gap-2">
-              <RefreshCw className={`h-4 w-4 ${isFetchingQr ? "animate-spin" : ""}`} /> Atualizar QR
-            </Button>
-          </div>
-        )}
-
-        {/* Creating state */}
-        {viewMode === "creating" && (
-          <div className="flex flex-col items-center justify-center py-12 gap-3">
-            <Loader2 className="h-8 w-8 text-primary animate-spin" />
-            <p className="text-sm text-muted-foreground">Criando instância...</p>
-          </div>
-        )}
-
         {/* Existing instances list */}
-        {instances.length > 0 && viewMode !== "qrcode" && viewMode !== "creating" && (
-          <div className="space-y-3">
+        {instances.length > 0 && (
+          <div className="space-y-3 mb-6">
+            <h4 className="text-sm font-medium text-card-foreground">Conexões Ativas</h4>
             {instances.map((inst) => (
               <InstanceRow
                 key={inst.id}
                 instance={inst}
-                onSelect={() => handleSelectInstance(inst)}
                 onDelete={() => handleDeleteInstance(inst.id)}
                 onUpdated={async () => {
                   const { data: updated } = await supabase.from("whatsapp_instances").select("*").eq("is_active", true).order("created_at", { ascending: false });
@@ -431,86 +189,52 @@ function WhatsAppIntegration({ profile }: { profile: any }) {
 
         {/* Create new instance form */}
         <div className="border-t pt-4 space-y-4">
-          <h4 className="text-sm font-medium text-card-foreground">Nova instância</h4>
+          <h4 className="text-sm font-medium text-card-foreground">{instances.length > 0 ? "Nova conexão" : "Configurar Conexão"}</h4>
+          
           <div className="space-y-3">
             <div>
-              <label className="text-xs font-medium text-muted-foreground">Nome da conexão</label>
-              <Input value={displayName} onChange={(e) => handleDisplayNameChange(e.target.value)} placeholder="Ex: WhatsApp Principal" />
-              {instanceName && (
-                <p className="text-xs text-muted-foreground mt-1">ID: <code className="bg-muted px-1 rounded">{instanceName}</code></p>
-              )}
+              <label className="text-xs font-medium text-muted-foreground">Nome da conexão (para seu controle)</label>
+              <Input value={displayName} onChange={(e) => setDisplayName(e.target.value)} placeholder="Ex: WhatsApp Principal" />
             </div>
-            <Button onClick={handleCreateInstance} disabled={isCreating || !displayName.trim() || !apiUrl.trim() || !apiKey.trim()} className="w-full gap-2">
-              {isCreating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
-              {isCreating ? "Criando..." : "Criar instância e gerar QR Code"}
-            </Button>
-          </div>
-        </div>
-
-        {/* Connect existing instance */}
-        <div className="border-t pt-4 space-y-3">
-          <div className="flex items-center justify-between">
+            
             <div>
-              <h4 className="text-sm font-medium text-card-foreground">Já tem uma instância criada?</h4>
-              <p className="text-xs text-muted-foreground">Vincule um canal existente da Evolution API a este workspace.</p>
+              <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Globe className="h-3.5 w-3.5" /> Phone Number ID (ID do Número de Telefone)
+              </label>
+              <Input value={phoneId} onChange={(e) => setPhoneId(e.target.value)} placeholder="Ex: 104561234567890" className="font-mono text-sm mt-1" />
             </div>
-            <Button variant="outline" size="sm" onClick={() => setShowExistingForm(v => !v)}>
-              {showExistingForm ? "Cancelar" : "Vincular existente"}
+            
+            <div>
+              <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Key className="h-3.5 w-3.5" /> Access Token (Token de Acesso do Usuário de Sistema)
+              </label>
+              <Input type="password" value={accessToken} onChange={(e) => setAccessToken(e.target.value)} placeholder="EAAI..." className="font-mono text-sm mt-1" />
+            </div>
+
+            <div>
+              <label className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                <Shield className="h-3.5 w-3.5" /> Verify Token (Token de Verificação do Webhook)
+              </label>
+              <Input type="password" value={verifyToken} onChange={(e) => setVerifyToken(e.target.value)} placeholder="Seu token secreto criado no painel da Meta" className="font-mono text-sm mt-1" />
+              <p className="text-xs text-muted-foreground mt-1">Você deve inserir este mesmo token na configuração do Webhook no painel da Meta.</p>
+            </div>
+
+            <Button onClick={handleSaveConfig} disabled={isSaving || !displayName.trim() || !phoneId.trim() || !verifyToken.trim() || !accessToken.trim()} className="w-full gap-2 mt-4">
+              {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+              {isSaving ? "Salvando..." : "Salvar Configuração"}
             </Button>
           </div>
-
-          {showExistingForm && (
-            <div className="space-y-3 rounded-lg border bg-muted/30 p-3">
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">Nome de exibição</label>
-                <Input
-                  value={existingDisplayName}
-                  onChange={(e) => setExistingDisplayName(e.target.value)}
-                  placeholder="Ex: WhatsApp Vendas"
-                />
-              </div>
-              <div>
-                <label className="text-xs font-medium text-muted-foreground">ID da instância (instance_name)</label>
-                <Input
-                  value={existingInstanceName}
-                  onChange={(e) => setExistingInstanceName(e.target.value)}
-                  placeholder="ex: vendas-principal"
-                  className="font-mono text-sm"
-                />
-                <p className="text-xs text-muted-foreground mt-1">
-                  O mesmo nome usado ao criar a instância na sua Evolution API.
-                </p>
-              </div>
-              <Button
-                onClick={handleConnectExisting}
-                disabled={isConnectingExisting || !existingDisplayName.trim() || !existingInstanceName.trim() || !apiUrl.trim() || !apiKey.trim()}
-                className="w-full gap-2"
-              >
-                {isConnectingExisting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Link2 className="h-4 w-4" />}
-                {isConnectingExisting ? "Vinculando..." : "Vincular instância"}
-              </Button>
-            </div>
-          )}
         </div>
       </div>
     </div>
   );
 }
 
-// --- Single instance row with AI-allowed-phone, settings & webhook config ---
-function InstanceRow({ instance, onSelect, onDelete, onUpdated }: { instance: any; onSelect: () => void; onDelete: () => void; onUpdated: () => void }) {
-  const [expanded, setExpanded] = useState<null | "ai" | "settings">(null);
+// --- Single instance row with AI-allowed-phone ---
+function InstanceRow({ instance, onDelete, onUpdated }: { instance: any; onDelete: () => void; onUpdated: () => void }) {
+  const [expanded, setExpanded] = useState<null | "ai">(null);
   const [allowed, setAllowed] = useState<string>(instance.ai_allowed_phone || "");
   const [saving, setSaving] = useState(false);
-
-  // Evolution settings state
-  const [groupsIgnore, setGroupsIgnore] = useState(true);
-  const [rejectCall, setRejectCall] = useState(false);
-  const [msgCall, setMsgCall] = useState("");
-  const [alwaysOnline, setAlwaysOnline] = useState(false);
-  const [readMessages, setReadMessages] = useState(false);
-  const [savingSettings, setSavingSettings] = useState(false);
-  const [reconfiguring, setReconfiguring] = useState(false);
 
   const handleSave = async () => {
     setSaving(true);
@@ -528,72 +252,27 @@ function InstanceRow({ instance, onSelect, onDelete, onUpdated }: { instance: an
     onUpdated();
   };
 
-  const handleSaveSettings = async () => {
-    setSavingSettings(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("update-evolution-settings", {
-        body: {
-          instance_id: instance.id,
-          groups_ignore: groupsIgnore,
-          reject_call: rejectCall,
-          msg_call: rejectCall ? msgCall : "",
-          always_online: alwaysOnline,
-          read_messages: readMessages,
-        },
-      });
-      if (error) throw error;
-      if (data && (data as any).success === false) throw new Error((data as any).error || "Erro");
-      toast.success("Configurações sincronizadas com a Evolution API");
-    } catch (err: any) {
-      toast.error("Erro ao salvar: " + (err?.message || "desconhecido"));
-    } finally {
-      setSavingSettings(false);
-    }
-  };
-
-  const handleReconfigureWebhook = async () => {
-    setReconfiguring(true);
-    try {
-      const { data, error } = await supabase.functions.invoke("update-evolution-settings", {
-        body: { instance_id: instance.id, reconfigure_webhook: true, webhook_enabled: true },
-      });
-      if (error) throw error;
-      if (data && (data as any).success === false) throw new Error((data as any).error || "Erro");
-      toast.success(`Webhook reconfigurado para ${instance.name} ✅`);
-    } catch (err: any) {
-      toast.error("Falha ao reconfigurar webhook: " + (err?.message || "desconhecido"));
-    } finally {
-      setReconfiguring(false);
-    }
-  };
-
   return (
     <div className="rounded-lg border bg-background">
       <div className="flex items-center justify-between p-3">
-        <button onClick={onSelect} className="flex items-center gap-3 text-left flex-1 min-w-0">
+        <div className="flex items-center gap-3 flex-1 min-w-0">
           <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${instance.status === "connected" ? "bg-primary/15 text-primary" : "bg-muted text-muted-foreground"}`}>
             {instance.status === "connected" ? <Wifi className="h-4 w-4" /> : <WifiOff className="h-4 w-4" />}
           </div>
           <div className="min-w-0">
             <p className="text-sm font-medium text-card-foreground truncate">{instance.name}</p>
             <p className="text-xs text-muted-foreground">
-              {instance.status === "connected" ? "Conectado" : "Desconectado"} • {instance.instance_name}
+              Phone ID: {instance.instance_name}
               {instance.ai_allowed_phone && <span className="ml-2 text-primary">• IA: {instance.ai_allowed_phone}</span>}
             </p>
           </div>
-        </button>
+        </div>
         <div className="flex items-center gap-1 shrink-0">
           <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => setExpanded(expanded === "ai" ? null : "ai")}>
-            IA
+            Restringir IA
           </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={() => setExpanded(expanded === "settings" ? null : "settings")}>
-            <Settings className="h-3.5 w-3.5" /> Editar
-          </Button>
-          <Button variant="ghost" size="sm" className="h-7 text-xs gap-1" onClick={handleReconfigureWebhook} disabled={reconfiguring} title="Reconfigurar webhook">
-            {reconfiguring ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
-          </Button>
-          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onDelete}>
-            <Trash2 className="h-3.5 w-3.5 text-muted-foreground" />
+          <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={onDelete}>
+            <Trash2 className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
@@ -616,56 +295,12 @@ function InstanceRow({ instance, onSelect, onDelete, onUpdated }: { instance: an
           </div>
         </div>
       )}
-
-      {expanded === "settings" && (
-        <div className="border-t px-3 py-3 space-y-3 bg-muted/20">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-card-foreground">Responder em grupos</p>
-              <p className="text-xs text-muted-foreground">Se desativado, mensagens de grupos são ignoradas.</p>
-            </div>
-            <Switch checked={!groupsIgnore} onCheckedChange={(v) => setGroupsIgnore(!v)} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-card-foreground">Rejeitar chamadas</p>
-              <p className="text-xs text-muted-foreground">Bloqueia chamadas recebidas no WhatsApp.</p>
-            </div>
-            <Switch checked={rejectCall} onCheckedChange={setRejectCall} />
-          </div>
-          {rejectCall && (
-            <div>
-              <label className="text-xs font-medium text-muted-foreground">Mensagem ao rejeitar chamada</label>
-              <Input value={msgCall} onChange={(e) => setMsgCall(e.target.value)} placeholder="Não atendo chamadas. Mande mensagem." />
-            </div>
-          )}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-card-foreground">Sempre online</p>
-              <p className="text-xs text-muted-foreground">Mostra status "online" continuamente.</p>
-            </div>
-            <Switch checked={alwaysOnline} onCheckedChange={setAlwaysOnline} />
-          </div>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-xs font-medium text-card-foreground">Marcar mensagens como lidas</p>
-              <p className="text-xs text-muted-foreground">Mostra "visto" automaticamente para o remetente.</p>
-            </div>
-            <Switch checked={readMessages} onCheckedChange={setReadMessages} />
-          </div>
-          <div className="flex justify-end pt-1">
-            <Button size="sm" onClick={handleSaveSettings} disabled={savingSettings}>
-              {savingSettings ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : null}
-              Sincronizar com Evolution
-            </Button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
 
 // --- Notification Preferences Component ---
+
 const NOTIFICATION_TYPES = [
   { key: "request_received", label: "Solicitação recebida" },
   { key: "request_accepted", label: "Solicitação aceita" },
@@ -785,7 +420,7 @@ function ProfileSection({ profile, updateProfile }: { profile: any; updateProfil
           />
         </div>
         <p className="text-xs text-muted-foreground">
-          Necessário para usar o <code className="text-foreground">/taskai</code> no Slack. No Slack, abra seu perfil → menu (...) → "Copiar ID do membro".
+          Necessário para usar o <code className="text-foreground">/waspeedkb</code> no Slack. No Slack, abra seu perfil → menu (...) → "Copiar ID do membro".
         </p>
       </div>
       {hasChanges && (
@@ -916,7 +551,7 @@ function SlackIntegration({ workspaceId }: { workspaceId: string }) {
           <div>
             <h3 className="font-heading font-semibold text-card-foreground">Integração com Slack</h3>
             <p className="text-sm text-muted-foreground mt-1">
-              Permita que seu time consulte tasks usando <code className="text-foreground">/taskai</code> no Slack.
+              Permita que seu time consulte tasks usando <code className="text-foreground">/waspeedkb</code> no Slack.
             </p>
           </div>
           <Switch checked={isEnabled} onCheckedChange={handleToggle} disabled={!hasExisting} />
@@ -926,7 +561,7 @@ function SlackIntegration({ workspaceId }: { workspaceId: string }) {
           <p className="font-medium text-card-foreground">Como configurar:</p>
           <ol className="list-decimal list-inside space-y-1 text-muted-foreground">
             <li>Acesse <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-primary underline">api.slack.com/apps</a> e crie um app "From scratch".</li>
-            <li>Em <strong>Slash Commands</strong>, crie <code className="text-foreground">/taskai</code> com Request URL:</li>
+            <li>Em <strong>Slash Commands</strong>, crie <code className="text-foreground">/waspeedkb</code> com Request URL:</li>
           </ol>
           <div className="rounded bg-background border px-3 py-2 font-mono text-xs break-all">
             {slackEndpoint || "Endpoint indisponível — VITE_SUPABASE_PROJECT_ID ausente"}

@@ -70,7 +70,7 @@ export function StepSlack({ workspaceId }: Props) {
         </div>
         <div>
           <h2 className="font-heading text-xl font-bold">Slack <span className="text-xs font-normal text-muted-foreground">(opcional)</span></h2>
-          <p className="text-sm text-muted-foreground">Use <code className="text-foreground">/taskai</code> direto no Slack.</p>
+          <p className="text-sm text-muted-foreground">Use <code className="text-foreground">/waspeedkb</code> direto no Slack.</p>
         </div>
       </div>
 
@@ -88,7 +88,7 @@ export function StepSlack({ workspaceId }: Props) {
             <p className="font-medium">Passos:</p>
             <ol className="list-decimal list-inside text-muted-foreground space-y-1">
               <li>Acesse <a href="https://api.slack.com/apps" target="_blank" rel="noopener noreferrer" className="text-primary inline-flex items-center gap-0.5">api.slack.com/apps <ExternalLink className="h-3 w-3" /></a> e crie um app.</li>
-              <li>Em <strong>Slash Commands</strong>, crie <code>/taskai</code> com a Request URL:</li>
+              <li>Em <strong>Slash Commands</strong>, crie <code>/waspeedkb</code> com a Request URL:</li>
             </ol>
             <code className="block bg-background border border-border rounded px-2 py-1 text-[10px] break-all">{endpoint || "—"}</code>
             <ol start={3} className="list-decimal list-inside text-muted-foreground space-y-1">

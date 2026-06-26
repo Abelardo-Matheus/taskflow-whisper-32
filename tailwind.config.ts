@@ -14,9 +14,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        heading: ["Inter", "system-ui", "sans-serif"],
-        body: ["Inter", "system-ui", "sans-serif"],
+        sans: ["Outfit", "system-ui", "sans-serif"],
+        heading: ["Outfit", "system-ui", "sans-serif"],
+        body: ["Outfit", "system-ui", "sans-serif"],
       },
       maxWidth: {
         content: "1200px",
@@ -90,13 +90,14 @@ export default {
         "2xl": "1rem",
       },
       boxShadow: {
-        "elevation-1": "0 1px 2px rgba(2,22,42,0.04)",
-        "elevation-2": "0 2px 8px rgba(2,22,42,0.05)",
-        "elevation-3": "0 4px 16px rgba(2,22,42,0.07)",
-        "elevation-4": "0 8px 32px rgba(2,22,42,0.09)",
-        "elevation-5": "0 16px 48px rgba(2,22,42,0.12)",
-        "accent-glow": "0 4px 16px rgba(99,102,241,0.25)",
-        "accent-glow-lg": "0 8px 24px rgba(99,102,241,0.35)",
+        "elevation-1": "0 1px 2px rgba(2, 58, 158, 0.05)",
+        "elevation-2": "0 2px 8px rgba(2, 58, 158, 0.06)",
+        "elevation-3": "0 4px 16px rgba(2, 58, 158, 0.08)",
+        "elevation-4": "0 8px 32px rgba(2, 58, 158, 0.12)",
+        "elevation-5": "0 16px 48px rgba(2, 58, 158, 0.15)",
+        "accent-glow": "0 4px 16px rgba(2, 58, 158, 0.25)",
+        "accent-glow-lg": "0 8px 24px rgba(2, 58, 158, 0.35)",
+        "destructive-glow": "0 4px 16px rgba(232, 28, 36, 0.25)",
       },
       keyframes: {
         "accordion-down": {

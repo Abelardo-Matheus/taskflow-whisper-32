@@ -15,8 +15,9 @@ interface KanbanColumnHeaderProps {
   overdueCount: number;
   hasConnection: boolean;
   isManager: boolean;
-  totalColumns: number;
   otherColumns: Column[];
+  isCollapsed?: boolean;
+  onToggleCollapse?: () => void;
   // Config popover data
   collections: Collection[];
   currentCollectionId: string;
@@ -46,8 +47,9 @@ export function KanbanColumnHeader({
   overdueCount,
   hasConnection,
   isManager,
-  totalColumns,
   otherColumns,
+  isCollapsed,
+  onToggleCollapse,
   collections,
   currentCollectionId,
   allColumns,
@@ -93,7 +95,7 @@ export function KanbanColumnHeader({
     setDeleteOpen(false);
   };
 
-  const canDelete = totalColumns > 2;
+  const canDelete = otherColumns.length >= 2;
   const wipLimit = (column as any).wip_limit || 0;
   const isOverWip = wipLimit > 0 && taskCount >= wipLimit;
 
@@ -121,7 +123,7 @@ export function KanbanColumnHeader({
           {isManager && (
             <GripVertical className="h-3.5 w-3.5 cursor-grab text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
           )}
-          {editing ? (
+          {editing && !isCollapsed ? (
             <Input
               ref={inputRef}
               value={editValue}
@@ -135,83 +137,99 @@ export function KanbanColumnHeader({
             />
           ) : (
             <h3
-              className="text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate cursor-default"
-              onDoubleClick={() => isManager && setEditing(true)}
-              title="Duplo-clique para renomear"
+              className={cn(
+                "text-xs font-semibold uppercase tracking-wider text-muted-foreground truncate cursor-default transition-all",
+                isCollapsed && "writing-vertical-rl rotate-180 mt-4 whitespace-nowrap overflow-visible"
+              )}
+              style={isCollapsed ? { writingMode: 'vertical-rl' } : {}}
+              onDoubleClick={() => isManager && !isCollapsed && setEditing(true)}
+              title={isCollapsed ? "Clique para expandir" : "Duplo-clique para renomear"}
             >
               {column.name}
             </h3>
           )}
-          {hasConnection && <Link2 className="h-3 w-3 text-primary shrink-0" />}
-          {/* Connection destination badges */}
-          {connectionBadges.map((name, i) => (
-            <span key={i} className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary shrink-0">
-              <ArrowRight className="h-2.5 w-2.5" /> {name}
-            </span>
-          ))}
+          
+          {!isCollapsed && (
+            <>
+              {hasConnection && <Link2 className="h-3 w-3 text-primary shrink-0" />}
+              {/* Connection destination badges */}
+              {connectionBadges.map((name, i) => (
+                <span key={i} className="inline-flex items-center gap-0.5 rounded bg-primary/10 px-1 py-0.5 text-[9px] font-medium text-primary shrink-0">
+                  <ArrowRight className="h-2.5 w-2.5" /> {name}
+                </span>
+              ))}
+            </>
+          )}
         </div>
 
-        <div className="flex items-center gap-1 shrink-0">
-          {overdueCount > 0 && (
-            <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-status-overdue/15 px-1.5 text-[10px] font-bold text-status-overdue">
-              {overdueCount}
+        {!isCollapsed && (
+          <div className="flex items-center gap-1 shrink-0">
+            {overdueCount > 0 && (
+              <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-status-overdue/15 px-1.5 text-[10px] font-bold text-status-overdue">
+                {overdueCount}
+              </span>
+            )}
+            <span className={cn(
+              "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold",
+              isOverWip
+                ? "bg-destructive/15 text-destructive"
+                : "bg-muted text-muted-foreground"
+            )}>
+              {taskCount}{wipLimit > 0 && `/${wipLimit}`}
             </span>
-          )}
-          <span className={cn(
-            "flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[10px] font-bold",
-            isOverWip
-              ? "bg-destructive/15 text-destructive"
-              : "bg-muted text-muted-foreground"
-          )}>
-            {taskCount}{wipLimit > 0 && `/${wipLimit}`}
-          </span>
-          <button
-            onClick={() => onAddTask(column.id)}
-            className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity"
-            title="Adicionar task"
-          >
-            <Plus className="h-3.5 w-3.5" />
-          </button>
-          {isManager && (
-            <ColumnConfigPopover
-              column={column}
-              collections={collections}
-              currentCollectionId={currentCollectionId}
-              allColumns={allColumns}
-              connections={connections}
-              automations={automations}
-              profiles={profiles}
-              onUpdateColumn={onUpdateColumn}
-              onCreateConnection={onCreateConnection}
-              onDeleteConnection={onDeleteConnection}
-              onUpdateConnectionTimeOptions={onUpdateConnectionTimeOptions}
-              onUpdateConnectionAssignee={onUpdateConnectionAssignee}
-              onCreateAutomation={onCreateAutomation}
-              onDeleteAutomation={onDeleteAutomation}
-            />
-          )}
-          {isManager && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity">
-                  <MoreVertical className="h-3.5 w-3.5" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem onClick={() => setEditing(true)}>
-                  <Pencil className="h-3.5 w-3.5 mr-2" /> Renomear
-                </DropdownMenuItem>
-                <DropdownMenuItem
-                  onClick={() => canDelete && setDeleteOpen(true)}
-                  disabled={!canDelete}
-                  className={cn(!canDelete && "opacity-50")}
-                >
-                  <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </div>
+            <button
+              onClick={() => onAddTask(column.id)}
+              className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity"
+              title="Adicionar task"
+            >
+              <Plus className="h-3.5 w-3.5" />
+            </button>
+            {isManager && (
+              <ColumnConfigPopover
+                column={column}
+                collections={collections}
+                currentCollectionId={currentCollectionId}
+                allColumns={allColumns}
+                connections={connections}
+                automations={automations}
+                profiles={profiles}
+                onUpdateColumn={onUpdateColumn}
+                onCreateConnection={onCreateConnection}
+                onDeleteConnection={onDeleteConnection}
+                onUpdateConnectionTimeOptions={onUpdateConnectionTimeOptions}
+                onUpdateConnectionAssignee={onUpdateConnectionAssignee}
+                onCreateAutomation={onCreateAutomation}
+                onDeleteAutomation={onDeleteAutomation}
+              />
+            )}
+            {isManager && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-5 w-5 flex items-center justify-center rounded text-muted-foreground hover:text-foreground hover:bg-accent opacity-0 group-hover:opacity-100 transition-opacity">
+                    <MoreVertical className="h-3.5 w-3.5" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-40">
+                  <DropdownMenuItem onClick={() => setEditing(true)}>
+                    <Pencil className="h-3.5 w-3.5 mr-2" /> Renomear
+                  </DropdownMenuItem>
+                  {onToggleCollapse && (
+                    <DropdownMenuItem onClick={onToggleCollapse}>
+                      <ArrowRight className="h-3.5 w-3.5 mr-2" /> Minimizar Coluna
+                    </DropdownMenuItem>
+                  )}
+                  <DropdownMenuItem
+                    onClick={() => canDelete && setDeleteOpen(true)}
+                    disabled={!canDelete}
+                    className={cn(!canDelete && "opacity-50")}
+                  >
+                    <Trash2 className="h-3.5 w-3.5 mr-2" /> Excluir
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Delete column dialog */}

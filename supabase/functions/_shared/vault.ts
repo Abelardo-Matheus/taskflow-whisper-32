@@ -11,10 +11,10 @@ export async function readVaultSecret(supabase: any, secretId: string | null | u
   return (data as string | null) ?? null;
 }
 
-export async function readEvolutionCredentials(
+export async function readMetaWhatsAppCredentials(
   supabase: any,
   instanceId: string,
-): Promise<{ api_url: string; api_key: string } | null> {
+): Promise<{ verify_token: string; access_token: string } | null> {
   const { data: secrets, error } = await supabase
     .from("whatsapp_instance_secrets")
     .select("vault_url_id, vault_key_id")
@@ -23,37 +23,37 @@ export async function readEvolutionCredentials(
 
   if (error || !secrets) return null;
 
-  const [api_url, api_key] = await Promise.all([
+  const [verify_token, access_token] = await Promise.all([
     readVaultSecret(supabase, secrets.vault_url_id),
     readVaultSecret(supabase, secrets.vault_key_id),
   ]);
 
-  if (!api_url || !api_key) return null;
-  return { api_url, api_key };
+  if (!verify_token || !access_token) return null;
+  return { verify_token, access_token };
 }
 
-export async function storeEvolutionCredentials(
+export async function storeMetaWhatsAppCredentials(
   supabase: any,
   instanceId: string,
-  apiUrl: string,
-  apiKey: string,
+  verifyToken: string,
+  accessToken: string,
 ): Promise<{ vault_url_id: string; vault_key_id: string }> {
   // Use the vault.create_secret directly via service role
   const { data: urlSecret, error: urlErr } = await supabase
     .schema("vault")
     .from("secrets")
-    .insert({ secret: apiUrl, name: `whatsapp_evolution_url_${instanceId}_${Date.now()}`, description: `Evolution URL for ${instanceId}` })
+    .insert({ secret: verifyToken, name: `whatsapp_meta_verify_${instanceId}_${Date.now()}`, description: `Meta Verify Token for ${instanceId}` })
     .select("id")
     .single();
-  if (urlErr) throw new Error(`vault url insert failed: ${urlErr.message}`);
+  if (urlErr) throw new Error(`vault verify_token insert failed: ${urlErr.message}`);
 
   const { data: keySecret, error: keyErr } = await supabase
     .schema("vault")
     .from("secrets")
-    .insert({ secret: apiKey, name: `whatsapp_evolution_key_${instanceId}_${Date.now()}`, description: `Evolution Key for ${instanceId}` })
+    .insert({ secret: accessToken, name: `whatsapp_meta_access_${instanceId}_${Date.now()}`, description: `Meta Access Token for ${instanceId}` })
     .select("id")
     .single();
-  if (keyErr) throw new Error(`vault key insert failed: ${keyErr.message}`);
+  if (keyErr) throw new Error(`vault access_token insert failed: ${keyErr.message}`);
 
   return { vault_url_id: urlSecret.id, vault_key_id: keySecret.id };
 }
