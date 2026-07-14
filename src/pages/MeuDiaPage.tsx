@@ -4,6 +4,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { PriorityDot } from "@/components/PriorityBadge";
 import { Badge } from "@/components/ui/badge";
 import { AppLayout } from "@/components/AppLayout";
+import { useAuth } from "@/contexts/AuthContext";
 import { useAllTasks, useUpdateTask, useUpdateSubtask, useAllColumns, useProfiles, type FullTask } from "@/hooks/useTaskData";
 import { cn, getBRTToday } from "@/lib/utils";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
@@ -11,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 export default function MeuDiaPage() {
+  const { user } = useAuth();
   const { data: tasks } = useAllTasks();
   const { data: allColumns } = useAllColumns();
   const { data: profiles } = useProfiles();
@@ -33,6 +35,10 @@ export default function MeuDiaPage() {
 
   const todayTasks = filteredTasks.filter(t => t.due_date === today);
   const overdueTasks = filteredTasks.filter(t => t.due_date && t.due_date < today);
+  
+  const myFutureOrNoDateTasks = filteredTasks.filter(t => 
+    t.assignee_id === user?.id && (!t.due_date || t.due_date > today)
+  );
 
   // Subtasks with due_date = today across all filtered tasks
   const todaySubtasks = useMemo(() => {
@@ -53,7 +59,7 @@ export default function MeuDiaPage() {
   }, [filteredTasks, today, searchQuery]);
 
   const priorityCounts = useMemo(() => {
-    const all = [...todayTasks, ...overdueTasks];
+    const all = [...todayTasks, ...overdueTasks, ...myFutureOrNoDateTasks];
     return {
       urgente: all.filter(t => t.priority === "urgente").length,
       alta: all.filter(t => t.priority === "alta").length,
@@ -62,7 +68,7 @@ export default function MeuDiaPage() {
       total: all.length + todaySubtasks.length,
       overdue: overdueTasks.length,
     };
-  }, [todayTasks, overdueTasks, todaySubtasks]);
+  }, [todayTasks, overdueTasks, myFutureOrNoDateTasks, todaySubtasks]);
 
   return (
     <AppLayout>
@@ -157,7 +163,7 @@ export default function MeuDiaPage() {
             <h2 className="font-heading text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
               <Sun className="h-4 w-4" /> Hoje ({todayTasks.length})
             </h2>
-            {todayTasks.length === 0 && overdueTasks.length === 0 && todaySubtasks.length === 0 ? (
+            {todayTasks.length === 0 && overdueTasks.length === 0 && todaySubtasks.length === 0 && myFutureOrNoDateTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center border rounded-xl border-dashed bg-card/50">
                 <CheckCircle2 className="h-12 w-12 text-status-on-track/30 mb-4" />
                 <h2 className="font-heading text-lg font-semibold text-foreground">Nenhuma task pra hoje</h2>
@@ -181,6 +187,33 @@ export default function MeuDiaPage() {
               </div>
             ) : null}
           </div>
+
+          {/* My Future / No Date Tasks */}
+          {myFutureOrNoDateTasks.length > 0 && (
+            <div>
+              <h2 className="font-heading text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-1.5">
+                <CheckCircle2 className="h-4 w-4" /> A Fazer / Futuras ({myFutureOrNoDateTasks.length})
+              </h2>
+              <div className="space-y-2">
+                {myFutureOrNoDateTasks.map(task => (
+                  <div 
+                    key={task.id} 
+                    onClick={() => setSelectedTask(task)}
+                    className="flex items-center gap-3 rounded-lg border bg-card p-3.5 cursor-pointer transition-colors hover:border-primary/40 hover:shadow-sm group"
+                  >
+                    <PriorityDot priority={task.priority} />
+                    <span className="flex-1 text-sm font-medium text-card-foreground truncate group-hover:text-primary transition-colors">{task.title}</span>
+                    {task.due_date && (
+                      <span className="text-[11px] text-muted-foreground font-medium whitespace-nowrap">
+                        {new Date(task.due_date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      </span>
+                    )}
+                    {task.collections && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">{task.collections.name}</Badge>}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Today's Subtasks */}
           {todaySubtasks.length > 0 && (
