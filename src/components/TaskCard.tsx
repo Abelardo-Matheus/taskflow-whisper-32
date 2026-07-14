@@ -16,9 +16,11 @@ interface TaskCardProps {
   dailyWorkHours?: number;
   weekendDays?: number[];
   holidays?: string[];
+  isDoneColumn?: boolean;
 }
 
-function isOverdue(task: FullTask): boolean {
+function isOverdue(task: FullTask, isDoneColumn?: boolean): boolean {
+  if (isDoneColumn) return false;
   if (!task.due_date) return false;
   return task.due_date < getBRTToday();
 }
@@ -38,8 +40,8 @@ function calcWorkHours(from: Date, to: Date, dailyHours: number, weekendDays: nu
   return hours;
 }
 
-export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, weekendDays = [0, 6], holidays = [] }: TaskCardProps) {
-  const overdue = isOverdue(task);
+export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, weekendDays = [0, 6], holidays = [], isDoneColumn = false }: TaskCardProps) {
+  const overdue = isOverdue(task, isDoneColumn);
   const subtasksDone = task.subtasks?.filter(s => s.is_done).length || 0;
   const subtasksTotal = task.subtasks?.length || 0;
   const hasActiveImpediment = task.impediments?.some(imp => !imp.resolved_at) || false;

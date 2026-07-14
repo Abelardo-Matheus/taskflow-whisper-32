@@ -5,17 +5,20 @@ import { PriorityDot } from "@/components/PriorityBadge";
 import { Badge } from "@/components/ui/badge";
 import { AppLayout } from "@/components/AppLayout";
 import { useAuth } from "@/contexts/AuthContext";
-import { useAllTasks, useUpdateTask, useUpdateSubtask, useAllColumns, useProfiles, type FullTask } from "@/hooks/useTaskData";
+import { useAllTasks, useUpdateTask, useUpdateSubtask, useAllColumns, useProfiles, useColumnAutomations, type FullTask } from "@/hooks/useTaskData";
 import { cn, getBRTToday } from "@/lib/utils";
 import { TaskDetailPanel } from "@/components/TaskDetailPanel";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 
 export default function MeuDiaPage() {
   const { user } = useAuth();
   const { data: tasks } = useAllTasks();
   const { data: allColumns } = useAllColumns();
   const { data: profiles } = useProfiles();
+  const { data: automations } = useColumnAutomations();
   const updateTask = useUpdateTask();
   const updateSubtask = useUpdateSubtask();
   
@@ -34,7 +37,11 @@ export default function MeuDiaPage() {
   });
 
   const todayTasks = filteredTasks.filter(t => t.due_date === today);
-  const overdueTasks = filteredTasks.filter(t => t.due_date && t.due_date < today);
+  const overdueTasks = filteredTasks.filter(t => {
+    if (!t.due_date || t.due_date >= today) return false;
+    const isDoneCol = automations?.some(a => a.column_id === t.column_id && a.type === "complete_task");
+    return !isDoneCol;
+  });
   
   const myFutureOrNoDateTasks = filteredTasks.filter(t => 
     t.assignee_id === user?.id && (!t.due_date || t.due_date > today)
@@ -42,21 +49,30 @@ export default function MeuDiaPage() {
 
   // Subtasks with due_date = today across all filtered tasks
   const todaySubtasks = useMemo(() => {
-    if (!filteredTasks) return [];
-    const result: { subtask: any; task: typeof tasks[0] }[] = [];
-    for (const task of filteredTasks) {
-      for (const sub of task.subtasks || []) {
-        if ((sub as any).due_date === today && !sub.is_done) {
-          // If searching, filter subtasks too
-          if (searchQuery && !sub.title.toLowerCase().includes(searchQuery.toLowerCase()) && !task.title.toLowerCase().includes(searchQuery.toLowerCase())) {
-            continue;
-          }
-          result.push({ subtask: sub, task });
-        }
-      }
-    }
-    return result;
+    return (filteredTasks || []).flatMap(t => 
+      (t.subtasks || [])
+        .filter(s => s.due_date === today)
+        .map(s => ({ subtask: s, task: t }))
+    ).filter(({ subtask, task }) => {
+      const matchSearch = subtask.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                          task.title.toLowerCase().includes(searchQuery.toLowerCase());
+      return matchSearch;
+    });
   }, [filteredTasks, today, searchQuery]);
+
+  const handleFinalizeTask = (e: React.MouseEvent, task: FullTask) => {
+    e.stopPropagation();
+    const doneColumn = allColumns?.find(
+      c => c.collection_id === task.collection_id && 
+           automations?.some(a => a.column_id === c.id && a.type === "complete_task")
+    );
+    if (doneColumn) {
+      updateTask.mutate({ id: task.id, column_id: doneColumn.id });
+      toast.success("Task movida para " + doneColumn.name);
+    } else {
+      toast.error("Nenhuma coluna configurada para concluir tasks.");
+    }
+  };
 
   const priorityCounts = useMemo(() => {
     const all = [...todayTasks, ...overdueTasks, ...myFutureOrNoDateTasks];
@@ -152,6 +168,15 @@ export default function MeuDiaPage() {
                       {new Date(task.due_date!).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
                     </span>
                     {task.collections && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">{task.collections.name}</Badge>}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      onClick={(e) => handleFinalizeTask(e, task)}
+                      title="Finalizar task"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -182,6 +207,15 @@ export default function MeuDiaPage() {
                     <PriorityDot priority={task.priority} />
                     <span className="flex-1 text-sm font-medium text-card-foreground truncate group-hover:text-primary transition-colors">{task.title}</span>
                     {task.collections && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">{task.collections.name}</Badge>}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      onClick={(e) => handleFinalizeTask(e, task)}
+                      title="Finalizar task"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>
@@ -209,6 +243,15 @@ export default function MeuDiaPage() {
                       </span>
                     )}
                     {task.collections && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">{task.collections.name}</Badge>}
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 text-muted-foreground hover:text-primary hover:bg-primary/10"
+                      onClick={(e) => handleFinalizeTask(e, task)}
+                      title="Finalizar task"
+                    >
+                      <CheckCircle2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 ))}
               </div>

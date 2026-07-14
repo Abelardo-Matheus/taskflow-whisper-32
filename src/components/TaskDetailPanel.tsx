@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PriorityBadge } from "./PriorityBadge";
 import { AssigneeScheduleModal } from "./AssigneeScheduleModal";
-import { useUpdateTask, useDeleteTask, useCreateSubtask, useUpdateSubtask, useDeleteSubtask, useProjects, useAllTasks, useTaskKanbanHistory, useCollections, type FullTask, type Column, type TaskPriority, type ProfileWithSector } from "@/hooks/useTaskData";
+import { useUpdateTask, useDeleteTask, useCreateSubtask, useUpdateSubtask, useDeleteSubtask, useProjects, useAllTasks, useTaskKanbanHistory, useCollections, useColumnAutomations, type FullTask, type Column, type TaskPriority, type ProfileWithSector } from "@/hooks/useTaskData";
 import { useWorkspaceSettings, useWorkspaceHolidays } from "@/hooks/useWorkspaceSettings";
 import { formatHoursDuration } from "@/lib/taskDistribution";
 import { autoPositionTask } from "@/lib/autoPosition";
@@ -46,6 +46,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
   const { data: allTasks } = useAllTasks();
   const { data: kanbanHistory } = useTaskKanbanHistory();
   const { data: collections } = useCollections();
+  const { data: automations } = useColumnAutomations();
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
@@ -159,6 +160,18 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
     toast.success("Task excluída");
   };
 
+  const doneColumn = columns.find(c => automations?.some(a => a.column_id === c.id && a.type === "complete_task"));
+  const isFinished = doneColumn && task.column_id === doneColumn.id;
+
+  const handleFinalize = () => {
+    if (doneColumn) {
+      updateTask.mutate({ id: task.id, column_id: doneColumn.id });
+      toast.success("Task movida para " + doneColumn.name);
+    } else {
+      toast.error("Nenhuma coluna configurada para concluir tasks.");
+    }
+  };
+
   return (
     <>
       <div className="fixed inset-0 z-40 bg-background/50 backdrop-blur-sm animate-fade-in" onClick={onClose} />
@@ -194,7 +207,14 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
                 </TooltipProvider>
               )}
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
+            <div className="flex items-center gap-1">
+              {!isFinished && doneColumn && (
+                <Button variant="outline" size="sm" onClick={handleFinalize} className="h-7 text-xs border-primary/50 text-primary hover:bg-primary hover:text-primary-foreground gap-1.5">
+                  <CheckCircle2 className="h-3.5 w-3.5" /> Finalizar
+                </Button>
+              )}
+              <Button variant="ghost" size="icon" onClick={onClose}><X className="h-4 w-4" /></Button>
+            </div>
           </div>
 
           <div className="flex-1 overflow-y-auto p-4 scrollbar-thin">

@@ -397,7 +397,7 @@ export function ColumnConfigPopover({
                     <span>
                       {auto.type === "assign_user" && `Atribuir: ${profiles.find(p => p.user_id === auto.value)?.name || auto.value}`}
                       {auto.type === "set_priority" && `Prioridade: ${PRIORITIES.find(p => p.value === auto.value)?.label || auto.value}`}
-                      {auto.type === "complete_task" && "Concluir task"}
+                      {auto.type === "complete_task" && `Concluir task (Auto-arquivo: ${auto.value}h)`}
                       {auto.type === "archive_task" && "Arquivar task"}
                     </span>
                     <button onClick={() => onDeleteAutomation(auto.id)} className="text-muted-foreground hover:text-destructive">
@@ -410,7 +410,7 @@ export function ColumnConfigPopover({
 
             {/* Add automation */}
             <div className="space-y-2">
-              <Select value={autoType} onValueChange={(v) => { setAutoType(v); setAutoValue(v === "complete_task" || v === "archive_task" ? "true" : ""); }}>
+              <Select value={autoType} onValueChange={(v) => { setAutoType(v); setAutoValue(v === "archive_task" ? "true" : v === "complete_task" ? "24" : ""); }}>
                 <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Tipo de automação" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="assign_user" className="text-xs">Atribuir responsável</SelectItem>
@@ -440,6 +440,23 @@ export function ColumnConfigPopover({
                     ))}
                   </SelectContent>
                 </Select>
+              )}
+
+              {autoType === "complete_task" && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-muted-foreground">Arquivar automaticamente após X horas</Label>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={autoValue}
+                    onChange={(e) => setAutoValue(e.target.value)}
+                    placeholder="Horas (ex: 24)"
+                    className="h-7 text-xs"
+                  />
+                  <p className="text-[10px] text-muted-foreground leading-tight">
+                    Use 0 para não arquivar automaticamente. A task não ficará com status de atrasada enquanto estiver nesta coluna.
+                  </p>
+                </div>
               )}
 
               {autoType && (

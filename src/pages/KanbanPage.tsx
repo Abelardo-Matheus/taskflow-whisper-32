@@ -63,6 +63,7 @@ export default function KanbanPage() {
   const [dragColumnId, setDragColumnId] = useState<string | null>(null);
   // Filters
   const [filters, setFilters] = useState<KanbanFilterState>({ assignee: "all", priority: "all", deadline: "all" });
+  const [showArchived, setShowArchived] = useState(false);
   
   // View Config
   const viewConfig = useViewConfig(activeCollection);
@@ -156,6 +157,32 @@ export default function KanbanPage() {
       });
     }
   }, [isArchivable]);
+
+  // Auto-archive check
+  useEffect(() => {
+    if (!tasks || !automations) return;
+    const completeAutomations = automations.filter(a => a.type === "complete_task");
+    if (completeAutomations.length === 0) return;
+
+    let didArchive = false;
+    tasks.forEach(task => {
+      const auto = completeAutomations.find(a => a.column_id === task.column_id);
+      if (auto && auto.value) {
+        const hours = parseFloat(auto.value);
+        if (hours > 0) {
+          const updatedTime = new Date(task.updated_at).getTime();
+          const now = Date.now();
+          if (now - updatedTime > hours * 3600000) {
+            updateTask.mutate({ id: task.id, is_archived: true });
+            didArchive = true;
+          }
+        }
+      }
+    });
+    if (didArchive) {
+      toast("Algumas tasks foram arquivadas automaticamente.");
+    }
+  }, [tasks, automations]);
 
   // ─── Handlers ───
 
@@ -469,9 +496,16 @@ export default function KanbanPage() {
 
   // Apply client-side filters
   const filteredTasks = useMemo(() => {
-    if (!tasks) return [];
-    return applyKanbanFilters(tasks, filters);
-  }, [tasks, filters]);
+    if (!tasks && !allTasksData) return [];
+    
+    // If showArchived is true, we might need to get tasks from allTasksData
+    // because useTasks might filter out archived ones.
+    const baseTasks = showArchived 
+      ? allTasksData?.filter(t => t.collection_id === collectionId && (t as any).is_archived) || []
+      : tasks || [];
+      
+    return applyKanbanFilters(baseTasks, filters);
+  }, [tasks, allTasksData, collectionId, filters, showArchived]);
 
   return (
     <AppLayout>
@@ -500,6 +534,16 @@ export default function KanbanPage() {
               <LayoutList className="w-4 h-4 mr-2" /> Lista
             </ToggleGroupItem>
           </ToggleGroup>
+          
+          <Button 
+            variant={showArchived ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+            className="ml-auto"
+          >
+            <Archive className="w-4 h-4 mr-2" />
+            {showArchived ? "Ver Ativas" : "Ver Arquivadas"}
+          </Button>
 
           <Button variant="outline" size="sm" onClick={handleQuickCreate} disabled={!collectionId} className="gap-1.5">
             <Plus className="h-4 w-4" /> Nova Task

@@ -156,6 +156,7 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
                           ? projectsList?.find(p => p.id === (task as any).project_id)?.name || null
                           : null;
                         const taskHistory = kanbanHistory?.filter(h => h.task_id === task.id) || [];
+                        const isDoneCol = automations?.some(a => a.column_id === column.id && a.type === "complete_task") || false;
                         return (
                           <TaskCard
                             key={task.id}
@@ -169,6 +170,7 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
                             dailyWorkHours={wsSettings?.daily_work_hours || 8}
                             weekendDays={wsSettings?.weekend_days || [0, 6]}
                             holidays={wsHolidays?.map(h => h.holiday_date) || []}
+                            isDoneColumn={isDoneCol}
                           />
                         );
                       })}
