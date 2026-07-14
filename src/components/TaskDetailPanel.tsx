@@ -13,7 +13,7 @@ import { useWorkspaceSettings, useWorkspaceHolidays } from "@/hooks/useWorkspace
 import { formatHoursDuration } from "@/lib/taskDistribution";
 import { autoPositionTask } from "@/lib/autoPosition";
 import { supabase } from "@/integrations/supabase/client";
-import { cn } from "@/lib/utils";
+import { cn, getBRTToday } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -113,7 +113,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
 
   if (!task) return null;
 
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date(new Date().toDateString());
+  const isOverdue = task.due_date && task.due_date < getBRTToday();
   const activeImpediments = task.impediments?.filter(imp => !imp.resolved_at) || [];
   const resolvedImpediments = task.impediments?.filter(imp => imp.resolved_at) || [];
 

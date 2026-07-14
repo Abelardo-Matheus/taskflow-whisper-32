@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, getBRTToday } from "@/lib/utils";
 import { AlertTriangle, Calendar, CheckCircle2, Link2, ArrowRight, ArrowLeft, FolderOpen, Clock } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PriorityDot } from "./PriorityBadge";
@@ -20,7 +20,7 @@ interface TaskCardProps {
 
 function isOverdue(task: FullTask): boolean {
   if (!task.due_date) return false;
-  return new Date(task.due_date) < new Date(new Date().toDateString());
+  return task.due_date < getBRTToday();
 }
 
 function calcWorkHours(from: Date, to: Date, dailyHours: number, weekendDays: number[], holidays: Set<string>): number {

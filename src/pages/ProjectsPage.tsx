@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Plus, FolderOpen, Calendar } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 import { useNavigate } from "react-router-dom";
+import { getBRTToday } from "@/lib/utils";
 
 export default function ProjectsPage() {
   const { data: projects } = useProjects();
@@ -85,7 +86,7 @@ export default function ProjectsPage() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
               {projects.map(project => {
                 const stats = getProjectStats(project.id);
-                const today = new Date().toISOString().split("T")[0];
+                const today = getBRTToday();
                 const isOverdue = project.end_date < today;
                 return (
                   <div

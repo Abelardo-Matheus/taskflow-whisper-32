@@ -33,7 +33,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { cn } from "@/lib/utils";
+import { cn, getBRTToday } from "@/lib/utils";
 
 export default function KanbanPage() {
   const { data: collections } = useCollections();
@@ -122,7 +122,7 @@ export default function KanbanPage() {
   const { data: tasks } = useTasks(collectionId);
   const { data: allTasksData } = useAllTasks();
 
-  const today = new Date().toISOString().split("T")[0];
+  const today = getBRTToday();
 
   // Helper to resolve linked card info for a task
   const getLinkedInfo = useCallback((task: FullTask): { name: string | null; direction: "outgoing" | "incoming" | null } => {
