@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
+import { toast } from "sonner";
 import type { Database } from "@/integrations/supabase/types";
 
 type Collection = Database["public"]["Tables"]["collections"]["Row"];
@@ -741,6 +742,9 @@ export function useCreateColumnAutomation() {
       return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["column-automations"] }),
+    onError: (err: any) => {
+      toast.error("Erro ao criar automação: " + err.message);
+    }
   });
 }
 

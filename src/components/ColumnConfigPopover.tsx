@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import type { Column, Collection, ColumnConnection, ProfileWithSector, TaskPriority, ColumnAutomation, AssigneeConfig } from "@/hooks/useTaskData";
 
 // ─── TimeOptionsEditor (inline) ───
@@ -410,7 +411,18 @@ export function ColumnConfigPopover({
 
             {/* Add automation */}
             <div className="space-y-2">
-              <Select value={autoType} onValueChange={(v) => { setAutoType(v); setAutoValue(v === "archive_task" ? "true" : v === "complete_task" ? "24" : ""); }}>
+              <Select value={autoType} onValueChange={(v) => { 
+                setAutoType(v); 
+                if (v === "archive_task") {
+                  onCreateAutomation(column.id, "archive_task", "true");
+                  setAutoType(""); setAutoValue("");
+                  toast.success("Automação adicionada!");
+                } else if (v === "complete_task") {
+                  setAutoValue("24");
+                } else {
+                  setAutoValue("");
+                }
+              }}>
                 <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Tipo de automação" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="assign_user" className="text-xs">Atribuir responsável</SelectItem>
@@ -421,7 +433,12 @@ export function ColumnConfigPopover({
               </Select>
 
               {autoType === "assign_user" && (
-                <Select value={autoValue} onValueChange={setAutoValue}>
+                <Select value={autoValue} onValueChange={(v) => {
+                  setAutoValue(v);
+                  onCreateAutomation(column.id, "assign_user", v);
+                  setAutoType(""); setAutoValue("");
+                  toast.success("Automação adicionada!");
+                }}>
                   <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Selecionar usuário" /></SelectTrigger>
                   <SelectContent>
                     {profiles.map(p => (
@@ -432,7 +449,12 @@ export function ColumnConfigPopover({
               )}
 
               {autoType === "set_priority" && (
-                <Select value={autoValue} onValueChange={setAutoValue}>
+                <Select value={autoValue} onValueChange={(v) => {
+                  setAutoValue(v);
+                  onCreateAutomation(column.id, "set_priority", v);
+                  setAutoType(""); setAutoValue("");
+                  toast.success("Automação adicionada!");
+                }}>
                   <SelectTrigger className="h-7 text-xs"><SelectValue placeholder="Selecionar prioridade" /></SelectTrigger>
                   <SelectContent>
                     {PRIORITIES.map(p => (
@@ -450,18 +472,34 @@ export function ColumnConfigPopover({
                     min="0"
                     value={autoValue}
                     onChange={(e) => setAutoValue(e.target.value)}
+                    onBlur={() => {
+                      if (autoValue !== "") {
+                        onCreateAutomation(column.id, "complete_task", autoValue);
+                        setAutoType(""); setAutoValue("");
+                        toast.success("Automação salva!");
+                      }
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" && autoValue !== "") {
+                        onCreateAutomation(column.id, "complete_task", autoValue);
+                        setAutoType(""); setAutoValue("");
+                        toast.success("Automação salva!");
+                      }
+                    }}
                     placeholder="Horas (ex: 24)"
-                    className="h-7 text-xs"
+                    className="h-7 text-xs border-primary"
+                    autoFocus
                   />
                   <p className="text-[10px] text-muted-foreground leading-tight">
                     Use 0 para não arquivar automaticamente. A task não ficará com status de atrasada enquanto estiver nesta coluna.
+                    (Pressione Enter ou clique fora para salvar)
                   </p>
                 </div>
               )}
 
               {autoType && (
-                <Button variant="outline" size="sm" onClick={handleAddAutomation} disabled={!autoValue} className="w-full h-7 text-xs">
-                  <Plus className="h-3 w-3 mr-1" /> Adicionar automação
+                <Button variant="default" size="sm" onClick={handleAddAutomation} disabled={!autoValue} className="w-full h-7 text-xs">
+                  <Plus className="h-3 w-3 mr-1" /> Salvar automação
                 </Button>
               )}
             </div>
