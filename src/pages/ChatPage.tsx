@@ -576,7 +576,7 @@ export default function ChatPage() {
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
-          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+          apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY,
         },
         body: JSON.stringify({ messages: allMessages }),
       });

@@ -10,6 +10,7 @@ interface ProfileData {
   avatar_url: string | null;
   phone: string | null;
   whatsapp_notifications: boolean;
+  last_collection_id: string | null;
 }
 
 interface AuthContextType {
@@ -24,7 +25,7 @@ const AuthContext = createContext<AuthContextType>({ user: null, profile: null, 
 function fetchProfile(userId: string) {
   return supabase
     .from("profiles")
-    .select("id, name, email, workspace_id, avatar_url, phone, whatsapp_notifications")
+    .select("id, name, email, workspace_id, avatar_url, phone, whatsapp_notifications, last_collection_id")
     .eq("user_id", userId)
     .single();
 }
