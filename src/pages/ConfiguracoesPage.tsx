@@ -835,30 +835,39 @@ export default function ConfiguracoesPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3 shrink-0">
-                      {/* Multi-sector checkboxes */}
-                      <div className="flex flex-wrap gap-2">
-                        {sectors?.map(s => {
-                          const isChecked = pSectorIds.includes(s.id);
-                          return (
-                            <label key={s.id} className="flex items-center gap-1.5 text-xs cursor-pointer">
-                              <Checkbox
-                                checked={isChecked}
-                                onCheckedChange={(checked) => {
-                                  if (checked) {
-                                    addUserSector.mutate({ user_id: p.user_id, sector_id: s.id });
-                                  } else {
-                                    removeUserSector.mutate({ user_id: p.user_id, sector_id: s.id });
-                                  }
-                                }}
-                              />
-                              <span className="text-card-foreground">{s.name}</span>
-                            </label>
-                          );
-                        })}
-                        {(!sectors || sectors.length === 0) && (
-                          <span className="text-xs text-muted-foreground">Sem setores</span>
-                        )}
-                      </div>
+                      {/* Multi-sector checkboxes via Popover */}
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm" className="h-7 text-xs font-normal">
+                            Setores ({pSectorIds.length})
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-56 p-2" align="end">
+                          <div className="space-y-1 max-h-[200px] overflow-y-auto scrollbar-thin pr-2">
+                            {sectors?.map(s => {
+                              const isChecked = pSectorIds.includes(s.id);
+                              return (
+                                <label key={s.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-accent p-1.5 rounded-md transition-colors">
+                                  <Checkbox
+                                    checked={isChecked}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        addUserSector.mutate({ user_id: p.user_id, sector_id: s.id });
+                                      } else {
+                                        removeUserSector.mutate({ user_id: p.user_id, sector_id: s.id });
+                                      }
+                                    }}
+                                  />
+                                  <span className="text-card-foreground flex-1 truncate">{s.name}</span>
+                                </label>
+                              );
+                            })}
+                            {(!sectors || sectors.length === 0) && (
+                              <p className="text-xs text-muted-foreground text-center py-2">Nenhum setor cadastrado.</p>
+                            )}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                       <span className="text-xs font-medium text-muted-foreground bg-muted px-2 py-1 rounded capitalize">{getUserRole(p.user_id)}</span>
                     </div>
                   </div>

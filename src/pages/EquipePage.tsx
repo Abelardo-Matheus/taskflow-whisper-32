@@ -293,12 +293,15 @@ export default function EquipePage() {
                     <TableCell>
                       {pSectors.length > 0 ? (
                         <div className="flex flex-wrap gap-1">
-                          {pSectors.map((s) => (
-                            <Badge key={s} variant="outline" className="text-xs">{s}</Badge>
+                          {pSectors.slice(0, 2).map((s) => (
+                            <Badge key={s} variant="outline" className="text-xs max-w-[120px] truncate block">{s}</Badge>
                           ))}
+                          {pSectors.length > 2 && (
+                            <Badge variant="secondary" className="text-xs">+{pSectors.length - 2}</Badge>
+                          )}
                         </div>
                       ) : (
-                        <span className="text-muted-foreground text-sm">—</span>
+                        <span className="text-muted-foreground">—</span>
                       )}
                     </TableCell>
                     <TableCell>
