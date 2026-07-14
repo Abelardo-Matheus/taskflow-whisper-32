@@ -237,7 +237,7 @@ export function useSaveLastCollection() {
   return useMutation({
     mutationFn: async (collectionId: string) => {
       if (!profile) return;
-      await supabase.from("profiles").update({ last_collection_id: collectionId } as any).eq("id", profile.id);
+      localStorage.setItem(`last_collection_id_${profile.id}`, collectionId);
     },
   });
 }

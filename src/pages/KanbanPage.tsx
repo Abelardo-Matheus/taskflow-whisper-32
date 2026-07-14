@@ -101,7 +101,7 @@ export default function KanbanPage() {
   // Restore last collection
   useEffect(() => {
     if (!activeCollection && collections && collections.length > 0 && profile) {
-      const lastId = profile.last_collection_id;
+      const lastId = localStorage.getItem(`last_collection_id_${profile.id}`);
       const active = collections.filter(c => !c.is_archived);
       if (lastId && active.some(c => c.id === lastId)) {
         setActiveCollection(lastId);
