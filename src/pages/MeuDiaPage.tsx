@@ -31,9 +31,10 @@ export default function MeuDiaPage() {
   
   // Apply Search and Priority filters
   const filteredTasks = activeTasks.filter(t => {
+    const matchesUser = t.assignee_id === user?.id;
     const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
-    return matchesSearch && matchesPriority;
+    return matchesUser && matchesSearch && matchesPriority;
   });
 
   const todayTasks = filteredTasks.filter(t => t.due_date === today);
