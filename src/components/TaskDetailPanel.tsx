@@ -281,7 +281,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
                   <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
                     <PopoverTrigger asChild>
                       <Button variant="outline" role="combobox" aria-expanded={assigneeOpen} className="justify-between mt-1 min-h-[36px] h-auto p-1.5 font-normal text-left">
-                        {task.assignee_ids && task.assignee_ids.length > 0 ? (
+                        {(task.assignee_ids || []).length > 0 ? (
                           <div className="flex flex-wrap gap-1">
                             {task.assignee_ids.map((id: string) => {
                               const profile = profiles.find(p => p.user_id === id);
