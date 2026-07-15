@@ -1,5 +1,5 @@
 import { cn, getBRTToday } from "@/lib/utils";
-import { AlertTriangle, Calendar, CheckCircle2, Link2, ArrowRight, ArrowLeft, FolderOpen, Clock } from "lucide-react";
+import { AlertTriangle, Calendar, CheckCircle2, Link2, ArrowRight, ArrowLeft, FolderOpen, Clock, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PriorityDot } from "./PriorityBadge";
 import type { FullTask } from "@/hooks/useTaskData";
@@ -17,6 +17,7 @@ interface TaskCardProps {
   weekendDays?: number[];
   holidays?: string[];
   isDoneColumn?: boolean;
+  onDelete?: (task: FullTask) => void;
 }
 
 function isOverdue(task: FullTask, isDoneColumn?: boolean): boolean {
@@ -40,7 +41,7 @@ function calcWorkHours(from: Date, to: Date, dailyHours: number, weekendDays: nu
   return hours;
 }
 
-export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, weekendDays = [0, 6], holidays = [], isDoneColumn = false }: TaskCardProps) {
+export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, weekendDays = [0, 6], holidays = [], isDoneColumn = false, onDelete }: TaskCardProps) {
   const overdue = isOverdue(task, isDoneColumn);
   const subtasksDone = task.subtasks?.filter(s => s.is_done).length || 0;
   const subtasksTotal = task.subtasks?.length || 0;
@@ -115,6 +116,20 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
             </TooltipProvider>
           )}
           {hasActiveImpediment && <AlertTriangle className="h-3.5 w-3.5 text-status-attention" />}
+          {onDelete && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                if (window.confirm("Tem certeza que deseja excluir esta task?")) {
+                  onDelete(task);
+                }
+              }}
+              className="text-muted-foreground hover:text-destructive transition-colors ml-1 p-0.5 rounded"
+              title="Excluir task"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2 flex-wrap">

@@ -42,6 +42,7 @@ interface KanbanBoardViewProps {
   createAutomation: any;
   deleteAutomation: any;
   setSelectedTask: (task: FullTask) => void;
+  handleDeleteTask?: (task: FullTask) => void;
   // Inline add
   showInlineAdd: boolean;
   setShowInlineAdd: (v: boolean) => void;
@@ -60,7 +61,7 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
     handleColumnDragStart, handleColumnDragOver, handleRenameColumn,
     handleDeleteColumn, setNewTaskColumnId, setNewTaskModalOpen,
     updateColumn, createConnection, deleteConnectionMut, updateConnectionMut,
-    createAutomation, deleteAutomation, setSelectedTask,
+    createAutomation, deleteAutomation, setSelectedTask, handleDeleteTask,
     showInlineAdd, setShowInlineAdd, inlineAddCol, setInlineAddCol, handleAddColumn, collections
   } = props;
 
@@ -171,6 +172,7 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
                             weekendDays={wsSettings?.weekend_days || [0, 6]}
                             holidays={wsHolidays?.map(h => h.holiday_date) || []}
                             isDoneColumn={isDoneCol}
+                            onDelete={handleDeleteTask}
                           />
                         );
                       })}

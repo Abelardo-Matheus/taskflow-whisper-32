@@ -23,7 +23,8 @@ import {
   useColumnConnections, useUserRoles, useAllColumns, useProfiles, useProjects,
   useColumnAutomations, useCreateColumnAutomation, useDeleteColumnAutomation,
   useCreateColumnConnection, useDeleteColumnConnection, useArchiveCollection,
-  useUpdateColumnConnection, useTaskKanbanHistory,
+  useCreateColumnConnection, useDeleteColumnConnection, useArchiveCollection,
+  useUpdateColumnConnection, useTaskKanbanHistory, useDeleteTask,
   type FullTask, type Collection, type ColumnConnection,
 } from "@/hooks/useTaskData";
 import { useWorkspaceSettings, useWorkspaceHolidays } from "@/hooks/useWorkspaceSettings";
@@ -82,6 +83,7 @@ export default function KanbanPage() {
   const saveLastCollection = useSaveLastCollection();
   const createTask = useCreateTask();
   const updateTask = useUpdateTask();
+  const deleteTask = useDeleteTask();
   const updateColumn = useUpdateColumn();
   const deleteColumn = useDeleteColumn();
   const reorderColumns = useReorderColumns();
@@ -468,6 +470,12 @@ export default function KanbanPage() {
     toast.success("Coleção restaurada!");
   };
 
+  const handleDeleteTask = (task: FullTask) => {
+    deleteTask.mutate({ id: task.id, collection_id: task.collection_id }, {
+      onSuccess: () => toast.success("Task excluída!")
+    });
+  };
+
   const handleCreateCollection = async (name: string, columns: string[], color: string | null) => {
     try {
       const data = await createCollectionWithColumns.mutateAsync({ name, columns, ...(color ? { color } : {}) });
@@ -606,6 +614,7 @@ export default function KanbanPage() {
             createAutomation={createAutomation}
             deleteAutomation={deleteAutomation}
             setSelectedTask={setSelectedTask}
+            handleDeleteTask={handleDeleteTask}
             showInlineAdd={showInlineAdd}
             setShowInlineAdd={setShowInlineAdd}
             inlineAddCol={inlineAddCol}
