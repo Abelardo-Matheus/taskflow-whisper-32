@@ -1,10 +1,13 @@
 import { useState, useEffect, useMemo } from "react";
-import { X, Calendar, Plus, Trash2, AlertTriangle, Link2, ArrowRight, ArrowLeft, ExternalLink, Clock, History } from "lucide-react";
+import { X, Calendar, Plus, Trash2, AlertTriangle, Link2, ArrowRight, ArrowLeft, ExternalLink, Clock, History, Check, ChevronsUpDown, Calendar as CalendarIcon, CheckCircle2, MessageSquare, Zap } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PriorityBadge } from "./PriorityBadge";
 import { AssigneeScheduleModal } from "./AssigneeScheduleModal";
@@ -54,7 +57,8 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [linkedInfo, setLinkedInfo] = useState<LinkedInfo | null>(null);
-  const [assigneeModal, setAssigneeModal] = useState<{ open: boolean; newAssigneeId: string }>({ open: false, newAssigneeId: "" });
+  const [assigneeModal, setAssigneeModal] = useState<{ open: boolean; newAssigneeId: string | null; newAssigneeIds: string[] }>({ open: false, newAssigneeId: null, newAssigneeIds: [] });
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
 
   const dailyHours = wsSettings?.daily_work_hours || 8;
   const holidayDates = holidays?.map(h => h.holiday_date) || [];
@@ -272,25 +276,76 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <label className="text-xs font-medium text-muted-foreground">Responsável</label>
-                  <Select
-                    value={task.assignee_id || "none"}
-                    onValueChange={(val) => {
-                      const newId = val === "none" ? null : val;
-                      if (newId && newId !== task.assignee_id) {
-                        setAssigneeModal({ open: true, newAssigneeId: newId });
-                      } else {
-                        updateTask.mutate({ id: task.id, assignee_id: newId });
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="mt-1"><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="none">Nenhum</SelectItem>
-                      {profiles.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                  </Select>
+                <div className="flex flex-col space-y-1">
+                  <label className="text-xs font-medium text-muted-foreground">Responsáveis</label>
+                  <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={assigneeOpen} className="justify-between mt-1 min-h-[36px] h-auto p-1.5 font-normal text-left">
+                        {task.assignee_ids && task.assignee_ids.length > 0 ? (
+                          <div className="flex flex-wrap gap-1">
+                            {task.assignee_ids.map((id: string) => {
+                              const profile = profiles.find(p => p.user_id === id);
+                              return (
+                                <Badge key={id} variant="secondary" className="px-1 text-[10px]">
+                                  {profile?.name}
+                                  <div
+                                    className="ml-1 cursor-pointer hover:text-destructive"
+                                    onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                                    onClick={(e) => {
+                                      e.preventDefault(); e.stopPropagation();
+                                      const newIds = task.assignee_ids.filter((p: string) => p !== id);
+                                      updateTask.mutate({ id: task.id, assignee_ids: newIds, assignee_id: newIds[0] || null });
+                                    }}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </div>
+                                </Badge>
+                              )
+                            })}
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground px-1">Nenhum</span>
+                        )}
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[200px] p-0" align="start">
+                      <Command>
+                        <CommandInput placeholder="Buscar responsável..." />
+                        <CommandList>
+                          <CommandEmpty>Nenhum responsável encontrado.</CommandEmpty>
+                          <CommandGroup>
+                            {profiles.map(p => {
+                              const isSelected = (task.assignee_ids || []).includes(p.user_id);
+                              return (
+                                <CommandItem
+                                  key={p.user_id}
+                                  value={p.name}
+                                  onSelect={() => {
+                                    const current = task.assignee_ids || [];
+                                    const newIds = isSelected 
+                                      ? current.filter((id: string) => id !== p.user_id) 
+                                      : [...current, p.user_id];
+                                    
+                                    const primaryChanged = newIds[0] !== task.assignee_id;
+                                    
+                                    if (primaryChanged && newIds[0]) {
+                                      setAssigneeModal({ open: true, newAssigneeId: newIds[0], newAssigneeIds: newIds });
+                                    } else {
+                                      updateTask.mutate({ id: task.id, assignee_ids: newIds, assignee_id: newIds[0] || null });
+                                    }
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", isSelected ? "opacity-100" : "opacity-0")} />
+                                  {p.name}
+                                </CommandItem>
+                              );
+                            })}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Prazo</label>
@@ -537,7 +592,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
         onOpenChange={(open) => setAssigneeModal(prev => ({ ...prev, open }))}
         assigneeName={profiles.find(p => p.user_id === assigneeModal.newAssigneeId)?.name || ""}
         onKeepCurrent={() => {
-          updateTask.mutate({ id: task.id, assignee_id: assigneeModal.newAssigneeId });
+          updateTask.mutate({ id: task.id, assignee_id: assigneeModal.newAssigneeId, assignee_ids: assigneeModal.newAssigneeIds });
         }}
         onAutoAdapt={async () => {
           const totalHours = (task as any).duration_hours || ((task as any).duration_days || 1) * dailyHours;
@@ -555,6 +610,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
           updateTask.mutate({
             id: task.id,
             assignee_id: assigneeModal.newAssigneeId,
+            assignee_ids: assigneeModal.newAssigneeIds,
             position_hour: result.startHour,
             due_date: result.dueDateStr,
           } as any);

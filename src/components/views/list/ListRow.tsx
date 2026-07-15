@@ -24,7 +24,11 @@ export function ListRow({ task, columns, profiles, projects, isSelected, onToggl
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [titleValue, setTitleValue] = useState(task.title);
 
-  const assignee = profiles.find(p => p.id === task.assignee_id);
+  const assignees = profiles.filter(p => (task.assignee_ids || []).includes(p.user_id));
+  if (!task.assignee_ids?.length && task.assignee_id) {
+    const legacyAssignee = profiles.find(p => p.id === task.assignee_id);
+    if (legacyAssignee && !assignees.find(a => a.id === legacyAssignee.id)) assignees.push(legacyAssignee);
+  }
   const column = columns.find(c => c.id === task.column_id);
   const project = projects.find(p => p.id === (task as any).project_id);
 
@@ -104,15 +108,19 @@ export function ListRow({ task, columns, profiles, projects, isSelected, onToggl
       </div>
 
       {/* Assignee */}
-      <div className="w-40 flex-shrink-0 py-2 px-3 flex items-center gap-2">
-        {assignee ? (
-          <>
-            <Avatar className="w-6 h-6">
-              <AvatarImage src={assignee.avatar_url || ""} />
-              <AvatarFallback className="text-[10px]">{assignee.name.substring(0,2).toUpperCase()}</AvatarFallback>
-            </Avatar>
-            <span className="text-xs truncate">{assignee.name}</span>
-          </>
+      <div className="w-40 flex-shrink-0 py-2 px-3 flex items-center gap-1">
+        {assignees.length > 0 ? (
+          <div className="flex -space-x-2 overflow-hidden">
+            {assignees.map((assignee, idx) => (
+              <Avatar key={assignee.user_id} className="w-6 h-6 border-2 border-background z-10 hover:z-20 relative" title={assignee.name}>
+                <AvatarImage src={assignee.avatar_url || ""} />
+                <AvatarFallback className="text-[10px] bg-primary/10 text-primary">{assignee.name.substring(0,2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            ))}
+            {assignees.length === 1 && (
+              <span className="text-xs truncate ml-3">{assignees[0].name}</span>
+            )}
+          </div>
         ) : (
           <span className="text-xs text-muted-foreground flex items-center gap-1">
             <User className="w-3 h-3" /> Não atribuído

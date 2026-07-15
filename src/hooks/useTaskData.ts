@@ -318,7 +318,7 @@ export function useCreateTask() {
   const qc = useQueryClient();
   const { user } = useAuth();
   return useMutation({
-    mutationFn: async (task: { title: string; column_id: string; collection_id: string; description?: string; priority?: TaskPriority; due_date?: string; assignee_id?: string; linked_task_id?: string }) => {
+    mutationFn: async (task: { title: string; column_id: string; collection_id: string; description?: string; priority?: TaskPriority; due_date?: string; assignee_id?: string; assignee_ids?: string[]; linked_task_id?: string }) => {
       const { data, error } = await supabase
         .from("tasks")
         .insert({ ...task, created_by: user!.id })
@@ -336,7 +336,7 @@ export function useCreateTask() {
 
 // Shared fields that must stay in sync across linked tasks
 const LINKED_SYNC_FIELDS: (keyof Task)[] = [
-  "title", "description", "assignee_id", "duration_hours", "duration_days",
+  "title", "description", "assignee_id", "assignee_ids", "duration_hours", "duration_days",
   "position_hour", "position_day", "priority", "project_id", "due_date",
 ];
 

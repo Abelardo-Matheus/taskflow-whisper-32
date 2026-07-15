@@ -113,7 +113,7 @@ export default function ProjectDetailPage() {
   const filteredTasks = useMemo(() => {
     let tasks = [...projectTasks];
     if (filterCol !== "all") tasks = tasks.filter(t => t.collection_id === filterCol);
-    if (filterAssignee !== "all") tasks = tasks.filter(t => t.assignee_id === filterAssignee);
+    if (filterAssignee !== "all") tasks = tasks.filter(t => (t.assignee_ids || []).includes(filterAssignee) || t.assignee_id === filterAssignee);
     if (filterPositioned === "positioned") tasks = tasks.filter(t => (t as any).position_day != null);
     if (filterPositioned === "unpositioned") tasks = tasks.filter(t => (t as any).position_day == null);
     return tasks;

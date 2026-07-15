@@ -6,7 +6,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Zap } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Zap, Check, ChevronsUpDown, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { useWorkspaceSettings, useWorkspaceHolidays } from "@/hooks/useWorkspaceSettings";
 import { formatHoursDuration } from "@/lib/taskDistribution";
 import type { TaskPriority, ProfileWithSector, Project } from "@/hooks/useTaskData";
@@ -15,6 +19,7 @@ export interface NewTaskData {
   title: string;
   description: string | null;
   assignee_id: string | null;
+  assignee_ids: string[];
   priority: TaskPriority;
   due_date: string | null;
   project_id: string | null;
@@ -39,7 +44,8 @@ interface NewTaskModalProps {
 export function NewTaskModal({ open, onOpenChange, onConfirm, profiles, projects, loading, columnName }: NewTaskModalProps) {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
-  const [assigneeId, setAssigneeId] = useState<string>("none");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
+  const [assigneeOpen, setAssigneeOpen] = useState(false);
   const [priority, setPriority] = useState<TaskPriority>("media");
   const [dueDate, setDueDate] = useState("");
   const [projectId, setProjectId] = useState<string>("none");
@@ -50,7 +56,7 @@ export function NewTaskModal({ open, onOpenChange, onConfirm, profiles, projects
 
   const dailyHours = wsSettings?.daily_work_hours || 8;
   const hasProject = projectId !== "none";
-  const hasAssignee = assigneeId !== "none";
+  const hasAssignee = assigneeIds.length > 0;
 
   const workStartHour = (() => {
     const t = wsSettings?.work_start_time || "09:00";
@@ -66,7 +72,8 @@ export function NewTaskModal({ open, onOpenChange, onConfirm, profiles, projects
     onConfirm({
       title: title.trim(),
       description: description.trim() || null,
-      assignee_id: hasAssignee ? assigneeId : null,
+      assignee_id: hasAssignee ? assigneeIds[0] : null,
+      assignee_ids: assigneeIds,
       priority,
       due_date: useAutoPos ? null : (dueDate || null),
       project_id: hasProject ? projectId : null,
@@ -83,7 +90,7 @@ export function NewTaskModal({ open, onOpenChange, onConfirm, profiles, projects
     // Reset
     setTitle("");
     setDescription("");
-    setAssigneeId("none");
+    setAssigneeIds([]);
     setPriority("media");
     setDueDate("");
     setProjectId("none");
@@ -125,17 +132,69 @@ export function NewTaskModal({ open, onOpenChange, onConfirm, profiles, projects
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <Label>Responsavel</Label>
-              <Select value={assigneeId} onValueChange={(v) => { setAssigneeId(v); if (v === "none") setAutoPosition(false); }}>
-                <SelectTrigger><SelectValue placeholder="Nenhum" /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Nenhum</SelectItem>
-                  {profiles.map(p => (
-                    <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+            <div className="space-y-1.5 flex flex-col">
+              <Label>Responsáveis</Label>
+              <Popover open={assigneeOpen} onOpenChange={setAssigneeOpen}>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" role="combobox" aria-expanded={assigneeOpen} className="justify-between min-h-10 h-auto p-2">
+                    {assigneeIds.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {assigneeIds.map(id => {
+                          const profile = profiles.find(p => p.user_id === id);
+                          return (
+                            <Badge key={id} variant="secondary" className="px-1 font-normal">
+                              {profile?.name}
+                              <div
+                                className="ml-1 ring-offset-background rounded-full outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 cursor-pointer hover:bg-destructive hover:text-destructive-foreground transition-colors"
+                                onMouseDown={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                }}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setAssigneeIds(prev => prev.filter(p => p !== id));
+                                }}
+                              >
+                                <X className="h-3 w-3" />
+                              </div>
+                            </Badge>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <span className="text-muted-foreground font-normal">Nenhum</span>
+                    )}
+                    <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-[200px] p-0" align="start">
+                  <Command>
+                    <CommandInput placeholder="Buscar responsável..." />
+                    <CommandList>
+                      <CommandEmpty>Nenhum responsável encontrado.</CommandEmpty>
+                      <CommandGroup>
+                        {profiles.map(p => (
+                          <CommandItem
+                            key={p.user_id}
+                            value={p.name}
+                            onSelect={() => {
+                              setAssigneeIds(prev => 
+                                prev.includes(p.user_id) 
+                                  ? prev.filter(id => id !== p.user_id) 
+                                  : [...prev, p.user_id]
+                              );
+                            }}
+                          >
+                            <Check className={cn("mr-2 h-4 w-4", assigneeIds.includes(p.user_id) ? "opacity-100" : "opacity-0")} />
+                            {p.name}
+                          </CommandItem>
+                        ))}
+                      </CommandGroup>
+                    </CommandList>
+                  </Command>
+                </PopoverContent>
+              </Popover>
             </div>
 
             <div className="space-y-1.5">

@@ -188,17 +188,21 @@ export default function GanttPage() {
     // Admin sees all; gestor sees own + team members'; usuario sees own only
     if (!isAdmin && user) {
       if (isGestor) {
-        tasks = tasks.filter(t => t.assignee_id === user.id || managedUserIds.has(t.assignee_id || ""));
+        tasks = tasks.filter(t => 
+          (t.assignee_ids || []).includes(user.id) || t.assignee_id === user.id || 
+          (t.assignee_ids || []).some((id: string) => managedUserIds.has(id)) || 
+          managedUserIds.has(t.assignee_id || "")
+        );
       } else {
-        tasks = tasks.filter(t => t.assignee_id === user.id);
+        tasks = tasks.filter(t => (t.assignee_ids || []).includes(user.id) || t.assignee_id === user.id);
       }
     }
 
     if (filterProject === "none") tasks = tasks.filter(t => !(t as any).project_id);
     else if (filterProject !== "all") tasks = tasks.filter(t => (t as any).project_id === filterProject);
     if (filterCollection !== "all") tasks = tasks.filter(t => t.collection_id === filterCollection);
-    if (filterAssignee !== "all") tasks = tasks.filter(t => t.assignee_id === filterAssignee);
-    if (showOnlyMine && user) tasks = tasks.filter(t => t.assignee_id === user.id);
+    if (filterAssignee !== "all") tasks = tasks.filter(t => (t.assignee_ids || []).includes(filterAssignee) || t.assignee_id === filterAssignee);
+    if (showOnlyMine && user) tasks = tasks.filter(t => (t.assignee_ids || []).includes(user.id) || t.assignee_id === user.id);
 
     return tasks;
   }, [allTasks, filterProject, filterCollection, filterAssignee, showOnlyMine, isAdmin, isGestor, managedUserIds, user]);

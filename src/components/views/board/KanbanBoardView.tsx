@@ -173,6 +173,7 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
                             holidays={wsHolidays?.map(h => h.holiday_date) || []}
                             isDoneColumn={isDoneCol}
                             onDelete={handleDeleteTask}
+                            profiles={profilesList}
                           />
                         );
                       })}

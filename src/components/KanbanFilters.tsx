@@ -114,7 +114,7 @@ export function KanbanFilters({ filters, onChange, profiles }: Props) {
 }
 
 /** Client-side filter logic */
-export function applyKanbanFilters<T extends { assignee_id: string | null; priority: string; due_date: string | null }>(
+export function applyKanbanFilters<T extends { assignee_id: string | null; assignee_ids?: string[] | null; priority: string; due_date: string | null }>(
   tasks: T[],
   filters: KanbanFilterState
 ): T[] {
@@ -123,10 +123,13 @@ export function applyKanbanFilters<T extends { assignee_id: string | null; prior
   return tasks.filter((t) => {
     // Assignee filter
     if (filters.assignee !== "all") {
+      const hasAssigneeIds = t.assignee_ids && t.assignee_ids.length > 0;
       if (filters.assignee === "unassigned") {
-        if (t.assignee_id) return false;
-      } else if (t.assignee_id !== filters.assignee) {
-        return false;
+        if (t.assignee_id || hasAssigneeIds) return false;
+      } else {
+        const matchesArray = hasAssigneeIds && t.assignee_ids!.includes(filters.assignee);
+        const matchesLegacy = t.assignee_id === filters.assignee;
+        if (!matchesArray && !matchesLegacy) return false;
       }
     }
 

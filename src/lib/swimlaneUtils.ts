@@ -20,7 +20,8 @@ export function groupTasksForSwimlanes(
     let title = "Não Atribuído";
 
     if (groupBy === "assignee") {
-      const user = profiles.find(p => p.id === task.assignee_id);
+      const primaryAssigneeId = (task.assignee_ids && task.assignee_ids.length > 0) ? task.assignee_ids[0] : task.assignee_id;
+      const user = profiles.find(p => p.id === primaryAssigneeId || p.user_id === primaryAssigneeId);
       if (user) {
         groupId = user.id;
         title = user.name;

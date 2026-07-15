@@ -2,8 +2,9 @@ import { cn, getBRTToday } from "@/lib/utils";
 import { AlertTriangle, Calendar, CheckCircle2, Link2, ArrowRight, ArrowLeft, FolderOpen, Clock, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { PriorityDot } from "./PriorityBadge";
-import type { FullTask } from "@/hooks/useTaskData";
+import type { FullTask, ProfileWithSector } from "@/hooks/useTaskData";
 import type { TaskKanbanHistoryRecord } from "@/hooks/useTaskData";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface TaskCardProps {
   task: FullTask;
@@ -18,6 +19,7 @@ interface TaskCardProps {
   holidays?: string[];
   isDoneColumn?: boolean;
   onDelete?: (task: FullTask) => void;
+  profiles?: ProfileWithSector[];
 }
 
 function isOverdue(task: FullTask, isDoneColumn?: boolean): boolean {
@@ -41,7 +43,7 @@ function calcWorkHours(from: Date, to: Date, dailyHours: number, weekendDays: nu
   return hours;
 }
 
-export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, weekendDays = [0, 6], holidays = [], isDoneColumn = false, onDelete }: TaskCardProps) {
+export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, weekendDays = [0, 6], holidays = [], isDoneColumn = false, onDelete, profiles = [] }: TaskCardProps) {
   const overdue = isOverdue(task, isDoneColumn);
   const subtasksDone = task.subtasks?.filter(s => s.is_done).length || 0;
   const subtasksTotal = task.subtasks?.length || 0;
@@ -79,6 +81,12 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
 
   const hasKanbanOverdue = kanbanExceededHours > 0;
   const hasTotalOverdue = totalExceededHours > 0;
+
+  const assignees = profiles.filter(p => (task.assignee_ids || []).includes(p.user_id));
+  if (!task.assignee_ids?.length && task.assignee_id) {
+    const legacyAssignee = profiles.find(p => p.id === task.assignee_id);
+    if (legacyAssignee && !assignees.find(a => a.id === legacyAssignee.id)) assignees.push(legacyAssignee);
+  }
 
   return (
     <div
@@ -145,6 +153,16 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
             <CheckCircle2 className="h-3 w-3" />
             {subtasksDone}/{subtasksTotal}
           </span>
+        )}
+        {assignees.length > 0 && (
+          <div className="flex -space-x-1.5 overflow-hidden ml-auto">
+            {assignees.map((assignee, idx) => (
+              <Avatar key={assignee.user_id} className="w-5 h-5 border-[1.5px] border-background z-10 hover:z-20 relative" title={assignee.name}>
+                <AvatarImage src={assignee.avatar_url || ""} />
+                <AvatarFallback className="text-[9px] bg-primary/10 text-primary">{assignee.name.substring(0,2).toUpperCase()}</AvatarFallback>
+              </Avatar>
+            ))}
+          </div>
         )}
         {/* Kanban time exceeded badge */}
         {hasKanbanOverdue && (

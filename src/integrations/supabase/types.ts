@@ -824,6 +824,7 @@ export type Database = {
       tasks: {
         Row: {
           assignee_id: string | null
+          assignee_ids: string[] | null
           collection_id: string
           column_id: string
           created_at: string
@@ -845,6 +846,7 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          assignee_ids?: string[] | null
           collection_id: string
           column_id: string
           created_at?: string
@@ -866,6 +868,7 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          assignee_ids?: string[] | null
           collection_id?: string
           column_id?: string
           created_at?: string

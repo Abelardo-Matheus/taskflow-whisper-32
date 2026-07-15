@@ -31,7 +31,7 @@ export default function MeuDiaPage() {
   
   // Apply Search and Priority filters
   const filteredTasks = activeTasks.filter(t => {
-    const matchesUser = t.assignee_id === user?.id;
+    const matchesUser = user && ((t.assignee_ids || []).includes(user.id) || t.assignee_id === user.id);
     const matchesSearch = t.title.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesPriority = priorityFilter === "all" || t.priority === priorityFilter;
     return matchesUser && matchesSearch && matchesPriority;
@@ -45,7 +45,7 @@ export default function MeuDiaPage() {
   });
   
   const myFutureOrNoDateTasks = filteredTasks.filter(t => 
-    t.assignee_id === user?.id && (!t.due_date || t.due_date > today)
+    user && ((t.assignee_ids || []).includes(user.id) || t.assignee_id === user.id) && (!t.due_date || t.due_date > today)
   );
 
   // Subtasks with due_date = today across all filtered tasks
