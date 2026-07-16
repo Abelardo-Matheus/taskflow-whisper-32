@@ -44,7 +44,6 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
 
   // Calculate kanban time exceeded
   let kanbanExceededHours = 0;
-  let totalExceededHours = 0;
   const holidaySet = new Set(holidays);
 
   if (kanbanHistory && kanbanHistory.length > 0) {
@@ -56,24 +55,27 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
         kanbanExceededHours = Math.round((workHrs - currentRec.time_limit_hours) * 10) / 10;
       }
     }
+  }
 
-    // Total duration exceeded
-    const taskDuration = (task as any).duration_hours;
-    if (taskDuration && taskDuration > 0) {
-      let totalWorkHours = 0;
-      for (const rec of kanbanHistory) {
-        const entered = new Date(rec.entered_at);
-        const exited = rec.exited_at ? new Date(rec.exited_at) : new Date();
-        totalWorkHours += calcBusinessHours(entered, exited, dailyWorkHours, workStartHour, weekendDays, holidaySet);
-      }
-      if (totalWorkHours > taskDuration) {
-        totalExceededHours = Math.round((totalWorkHours - taskDuration) * 10) / 10;
-      }
+  // Deadline exceeded based on due_date
+  let deadlineExceededHours = 0;
+  if (task.due_date && overdue) {
+    let dueTime: number;
+    if (task.due_date.length === 10 && !task.due_date.includes("T")) {
+      const [y, m, d] = task.due_date.split("-");
+      dueTime = new Date(Number(y), Number(m) - 1, Number(d), 23, 59, 59).getTime();
+    } else {
+      dueTime = new Date(task.due_date).getTime();
+    }
+    
+    const msPassed = Date.now() - dueTime;
+    if (msPassed > 0) {
+      deadlineExceededHours = Math.round((msPassed / (1000 * 60 * 60)) * 10) / 10;
     }
   }
 
   const hasKanbanOverdue = kanbanExceededHours > 0;
-  const hasTotalOverdue = totalExceededHours > 0;
+  const hasDeadlineOverdue = deadlineExceededHours > 0;
 
   const assignees = profiles.filter(p => (task.assignee_ids || []).includes(p.user_id));
   if (!task.assignee_ids?.length && task.assignee_id) {
@@ -92,7 +94,7 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
       className={cn(
         "group cursor-pointer rounded-lg border bg-card p-3 transition-all duration-300 hover:-translate-y-1 hover:shadow-elevation-3 hover:border-primary/40",
         overdue && "border-status-overdue/30",
-        (hasKanbanOverdue || hasTotalOverdue) && "border-destructive border-2"
+        (hasKanbanOverdue || hasDeadlineOverdue) && "border-destructive border-2"
       )}
     >
       <div className="flex items-start justify-between gap-2">
@@ -163,10 +165,10 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
             <Clock className="h-2.5 w-2.5" /> Excedido: +{kanbanExceededHours}h
           </span>
         )}
-        {/* Total time exceeded badge */}
-        {hasTotalOverdue && !hasKanbanOverdue && (
+        {/* Deadline exceeded badge */}
+        {hasDeadlineOverdue && !hasKanbanOverdue && (
           <span className="inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-[9px] font-bold bg-destructive text-destructive-foreground">
-            <Clock className="h-2.5 w-2.5" /> Atrasada: +{totalExceededHours}h
+            <Clock className="h-2.5 w-2.5" /> Atrasada: +{deadlineExceededHours}h
           </span>
         )}
         {/* Project badge */}
