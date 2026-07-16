@@ -10,7 +10,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Badge } from "@/components/ui/badge";
 import { Zap, Check, ChevronsUpDown, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, fromDatetimeLocal } from "@/lib/utils";
 import { useWorkspaceSettings, useWorkspaceHolidays } from "@/hooks/useWorkspaceSettings";
 import { formatHoursDuration } from "@/lib/taskDistribution";
 import type { TaskPriority, ProfileWithSector, Project } from "@/hooks/useTaskData";
@@ -75,7 +75,7 @@ export function NewTaskModal({ open, onOpenChange, onConfirm, profiles, projects
       assignee_id: hasAssignee ? assigneeIds[0] : null,
       assignee_ids: assigneeIds,
       priority,
-      due_date: useAutoPos ? null : (dueDate || null),
+      due_date: useAutoPos ? null : (fromDatetimeLocal(dueDate) || null),
       project_id: hasProject ? projectId : null,
       duration_hours: durationHours,
       auto_position: useAutoPos,
@@ -271,7 +271,7 @@ export function NewTaskModal({ open, onOpenChange, onConfirm, profiles, projects
             <div className="space-y-1.5">
               <Label>Prazo final</Label>
               <Input
-                type="date"
+                type="datetime-local"
                 value={dueDate}
                 onChange={(e) => setDueDate(e.target.value)}
               />
