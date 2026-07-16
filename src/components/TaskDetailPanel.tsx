@@ -487,16 +487,21 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
                 if (taskHistory.length === 0) return null;
 
                 const calcWorkHrs = (from: Date, to: Date) => {
-                  let hours = 0;
-                  const d = new Date(from); d.setHours(0, 0, 0, 0);
-                  const end = new Date(to); end.setHours(0, 0, 0, 0);
-                  while (d <= end) {
-                    const dk = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
-                    const isOff = weekendDays.includes(d.getDay()) || holidayDates.includes(dk);
-                    if (!isOff) hours += dailyHours;
-                    d.setDate(d.getDate() + 1);
+                  if (from >= to) return 0;
+                  let totalMs = 0;
+                  const current = new Date(from);
+                  while (current < to) {
+                    const dk = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
+                    const isOff = weekendDays.includes(current.getDay()) || holidayDates.includes(dk);
+                    const endOfDay = new Date(current);
+                    endOfDay.setHours(23, 59, 59, 999);
+                    const nextStep = endOfDay < to ? endOfDay : to;
+                    if (!isOff) {
+                      totalMs += nextStep.getTime() - current.getTime();
+                    }
+                    current.setTime(endOfDay.getTime() + 1);
                   }
-                  return hours;
+                  return totalMs / (1000 * 60 * 60);
                 };
 
                 return (
