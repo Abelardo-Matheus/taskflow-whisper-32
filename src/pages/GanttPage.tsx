@@ -587,12 +587,15 @@ export default function GanttPage() {
       const totalHours = pending?.duration_hours ?? (task as any).duration_hours ?? ((task as any).duration_days || 1) * dailyHours;
       const posHour = pending?.position_hour ?? (task as any).position_hour ?? workStart;
 
-      // Use due_date as start when set (scheduled position), otherwise created_at
-      const startDate = pending?.due_date
-        ? new Date(pending.due_date + "T00:00:00")
-        : task.due_date
-          ? new Date(task.due_date + "T00:00:00")
-          : new Date(task.created_at);
+      const getStartDate = (val: string | null | undefined) => {
+        if (!val) return null;
+        if (val.includes("T")) return new Date(val);
+        return new Date(val + "T00:00:00");
+      };
+
+      const startDate = getStartDate(pending?.due_date) 
+        || getStartDate(task.due_date) 
+        || new Date(task.created_at);
 
       if (totalHours <= 0) continue;
 
@@ -787,11 +790,11 @@ export default function GanttPage() {
           )}
 
           {/* Toolbar */}
-          <div className="flex items-center gap-2 border-b px-6 py-3 shrink-0 flex-wrap">
-            <h1 className="font-heading text-xl font-bold mr-3">Agenda</h1>
+          <div className="flex items-center gap-2 border-b border-border/40 px-6 py-3 shrink-0 flex-wrap bg-card/50 backdrop-blur-sm z-10 sticky top-0">
+            <h1 className="font-heading text-lg font-bold mr-4">Agenda</h1>
 
             <Select value={filterProject} onValueChange={setFilterProject}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="Projeto" /></SelectTrigger>
+              <SelectTrigger className="w-36 h-8 rounded-full bg-muted/40 border-0 text-xs hover:bg-muted/70 transition-colors"><SelectValue placeholder="Projeto" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todos projetos</SelectItem>
                 <SelectItem value="none">Sem projeto</SelectItem>
@@ -800,7 +803,7 @@ export default function GanttPage() {
             </Select>
 
             <Select value={filterCollection} onValueChange={setFilterCollection}>
-              <SelectTrigger className="w-40"><SelectValue placeholder="Coleção" /></SelectTrigger>
+              <SelectTrigger className="w-36 h-8 rounded-full bg-muted/40 border-0 text-xs hover:bg-muted/70 transition-colors"><SelectValue placeholder="Coleção" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Todas coleções</SelectItem>
                 {collections?.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
@@ -809,7 +812,7 @@ export default function GanttPage() {
 
             {isManager && (
               <Select value={filterAssignee} onValueChange={setFilterAssignee}>
-                <SelectTrigger className="w-40"><SelectValue placeholder="Responsável" /></SelectTrigger>
+                <SelectTrigger className="w-36 h-8 rounded-full bg-muted/40 border-0 text-xs hover:bg-muted/70 transition-colors"><SelectValue placeholder="Responsável" /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">Todos</SelectItem>
                   {profiles?.map(p => <SelectItem key={p.user_id} value={p.user_id}>{p.name}</SelectItem>)}
@@ -820,25 +823,25 @@ export default function GanttPage() {
             <Button
               variant={showOnlyMine ? "default" : "outline"}
               size="sm"
-              className="text-xs gap-1.5"
+              className="h-8 rounded-full text-xs px-3 gap-1.5 ml-2"
               onClick={() => setShowOnlyMine(v => !v)}
             >
               <User className="h-3.5 w-3.5" />
-              Minhas Tarefas
+              Minhas
             </Button>
 
-            <div className="flex items-center gap-1 ml-auto">
-              <Button variant="ghost" size="sm" onClick={() => setColorMode(m => m === "status" ? "assignee" : "status")} className="text-xs">
+            <div className="flex items-center gap-2 ml-auto">
+              <Button variant="ghost" size="sm" onClick={() => setColorMode(m => m === "status" ? "assignee" : "status")} className="h-8 rounded-full text-[11px] bg-muted/20 hover:bg-muted/50">
                 Cor: {colorMode === "status" ? "Status" : "Responsável"}
               </Button>
 
-              <div className="flex items-center border rounded-md">
+              <div className="flex items-center bg-muted/30 p-1 rounded-full border border-border/40">
                 {(["day", "week", "month"] as GanttView[]).map(v => (
                   <Button
                     key={v}
                     variant={ganttView === v ? "default" : "ghost"}
                     size="sm"
-                    className="h-8 text-xs px-3"
+                    className={cn("h-7 text-[11px] px-3.5 rounded-full transition-all", ganttView === v && "shadow-sm")}
                     onClick={() => handleViewSwitch(v)}
                   >
                     {v === "day" ? "Dia" : v === "week" ? "Semana" : "Mês"}
@@ -1126,10 +1129,10 @@ export default function GanttPage() {
                                 <div
                                   key={`${seg.task.id}-${seg.startHour}`}
                                   className={cn(
-                                    "absolute rounded-xl flex flex-col p-3 text-white cursor-grab select-none overflow-hidden transition-shadow",
+                                    "absolute rounded-2xl flex flex-col p-3 text-white cursor-grab select-none overflow-hidden transition-all duration-200 border border-white/10 shadow-sm hover:shadow-md backdrop-blur-sm",
                                     !hexColor && barColor,
-                                    isPending && "ring-2 ring-primary/60",
-                                    preview?.taskId === seg.task.id && "opacity-75 shadow-xl cursor-grabbing",
+                                    isPending && "ring-2 ring-primary/80 ring-offset-1 ring-offset-background",
+                                    preview?.taskId === seg.task.id && "opacity-80 shadow-2xl cursor-grabbing scale-[1.02]",
                                     
                                   )}
                                   style={{
