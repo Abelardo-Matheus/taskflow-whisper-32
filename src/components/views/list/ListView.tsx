@@ -73,8 +73,10 @@ export function ListView({
         }
       } else if (groupBy === "due_date") {
         if (task.due_date) {
-          groupId = task.due_date;
-          title = task.due_date; // We can format this better if needed
+          const dateStr = task.due_date.includes("T") ? task.due_date.split("T")[0] : task.due_date;
+          groupId = dateStr;
+          const [y, m, d] = dateStr.split("-");
+          title = `${d}/${m}/${y}`;
         } else {
           groupId = "no_date";
           title = "Sem Prazo";

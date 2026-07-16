@@ -133,10 +133,10 @@ export function ListRow({ task, columns, profiles, projects, isSelected, onToggl
         {task.due_date ? (
           <span className={cn(
             "text-xs flex items-center gap-1", 
-            task.due_date < new Date().toISOString().split("T")[0] ? "text-red-500 font-medium" : "text-muted-foreground"
+            task.due_date.split("T")[0] < new Date().toISOString().split("T")[0] ? "text-red-500 font-medium" : "text-muted-foreground"
           )}>
             <Calendar className="w-3 h-3" />
-            {format(new Date(task.due_date + "T12:00:00"), "dd MMM", { locale: ptBR })}
+            {format(task.due_date.includes("T") ? new Date(task.due_date) : new Date(task.due_date + "T12:00:00"), "dd MMM", { locale: ptBR })}
           </span>
         ) : (
           <span className="text-xs text-muted-foreground">-</span>
