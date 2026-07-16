@@ -34,7 +34,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
-import { cn, getBRTToday } from "@/lib/utils";
+import { cn, getBRTToday, isTaskOverdue } from "@/lib/utils";
 
 export default function KanbanPage() {
   const { data: collections } = useCollections();
@@ -43,6 +43,12 @@ export default function KanbanPage() {
   const { data: kanbanHistory } = useTaskKanbanHistory();
   const { data: wsSettings } = useWorkspaceSettings();
   const { data: wsHolidays } = useWorkspaceHolidays();
+  
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const qc = useQueryClient();
@@ -500,7 +506,7 @@ export default function KanbanPage() {
   };
 
   const currentSelectedTask = selectedTask && tasks?.find(t => t.id === selectedTask.id) || null;
-  const isOverdue = (dueDate: string | null) => dueDate ? dueDate < today : false;
+  const isOverdue = isTaskOverdue;
 
   // Apply client-side filters
   const filteredTasks = useMemo(() => {

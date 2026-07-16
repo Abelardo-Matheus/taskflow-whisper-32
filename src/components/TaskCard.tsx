@@ -1,4 +1,4 @@
-import { cn, getBRTToday } from "@/lib/utils";
+import { cn, getBRTToday, formatTaskDueDate, isTaskOverdue } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Calendar, CheckCircle2, Link2, ArrowRight, ArrowLeft, FolderOpen, Clock, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -25,8 +25,7 @@ interface TaskCardProps {
 
 function isOverdue(task: FullTask, isDoneColumn?: boolean): boolean {
   if (isDoneColumn) return false;
-  if (!task.due_date) return false;
-  return task.due_date < getBRTToday();
+  return isTaskOverdue(task.due_date);
 }
 
 function calcWorkHoursRealTime(from: Date, to: Date, weekendDays: number[], holidays: Set<string>): number {
@@ -156,7 +155,7 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
         {task.due_date && (
           <span className={cn("flex items-center gap-1 text-[11px] font-medium", overdue ? "text-status-overdue" : "text-muted-foreground")}>
             <Calendar className="h-3 w-3" />
-            {new Date(task.due_date).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+            {formatTaskDueDate(task.due_date)}
           </span>
         )}
         {subtasksTotal > 0 && (

@@ -16,7 +16,7 @@ import { useWorkspaceSettings, useWorkspaceHolidays } from "@/hooks/useWorkspace
 import { formatHoursDuration } from "@/lib/taskDistribution";
 import { autoPositionTask } from "@/lib/autoPosition";
 import { supabase } from "@/integrations/supabase/client";
-import { cn, getBRTToday } from "@/lib/utils";
+import { cn, getBRTToday, toDatetimeLocal, fromDatetimeLocal, isTaskOverdue } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -118,7 +118,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
 
   if (!task) return null;
 
-  const isOverdue = task.due_date && task.due_date < getBRTToday();
+  const isOverdue = isTaskOverdue(task.due_date);
   const activeImpediments = task.impediments?.filter(imp => !imp.resolved_at) || [];
   const resolvedImpediments = task.impediments?.filter(imp => imp.resolved_at) || [];
 
@@ -349,7 +349,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
                 </div>
                 <div>
                   <label className="text-xs font-medium text-muted-foreground">Prazo</label>
-                  <Input type="date" value={task.due_date || ""} onChange={(e) => updateTask.mutate({ id: task.id, due_date: e.target.value || null })} className={cn("mt-1", isOverdue && "text-status-overdue")} />
+                  <Input type="datetime-local" value={toDatetimeLocal(task.due_date)} onChange={(e) => updateTask.mutate({ id: task.id, due_date: fromDatetimeLocal(e.target.value) })} className={cn("mt-1", isOverdue && "text-status-overdue")} />
                 </div>
               </div>
 
@@ -458,9 +458,9 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
                       <Checkbox checked={sub.is_done} onCheckedChange={(checked) => updateSubtask.mutate({ id: sub.id, is_done: !!checked })} />
                       <span className={cn("flex-1 text-sm", sub.is_done && "line-through text-muted-foreground")}>{sub.title}</span>
                       <Input
-                        type="date"
-                        value={(sub as any).due_date || ""}
-                        onChange={(e) => updateSubtask.mutate({ id: sub.id, due_date: e.target.value || null } as any)}
+                        type="datetime-local"
+                        value={toDatetimeLocal((sub as any).due_date)}
+                        onChange={(e) => updateSubtask.mutate({ id: sub.id, due_date: fromDatetimeLocal(e.target.value) } as any)}
                         className="h-6 w-28 text-[11px] px-1"
                         title="Prazo da subtask"
                       />
