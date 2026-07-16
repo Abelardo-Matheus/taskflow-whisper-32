@@ -66,7 +66,7 @@ export default function EquipesPage() {
         setNewTeamOpen(false);
         setNewTeamName("");
         setNewTeamMembers([]);
-        toast.success("Equipe criada!");
+        toast.success("Setor criado!");
       },
       onError: (e: any) => toast.error(e.message),
     });
@@ -76,7 +76,7 @@ export default function EquipesPage() {
     deleteTeam.mutate(id, {
       onSuccess: () => {
         setSelectedTeamId(null);
-        toast.success("Equipe excluída!");
+        toast.success("Setor excluído!");
       },
     });
   };
@@ -87,17 +87,17 @@ export default function EquipesPage() {
         <div className="p-4 md:p-6 border-b space-y-4">
           <div className="flex items-center gap-3">
             <Users className="h-6 w-6 text-primary" />
-            <h1 className="text-2xl font-bold text-foreground">Equipes</h1>
-            <Badge variant="secondary" className="ml-2">{teams.length} equipes</Badge>
+            <h1 className="text-2xl font-bold text-foreground">Setores</h1>
+            <Badge variant="secondary" className="ml-2">{teams.length} setores</Badge>
           </div>
           <div className="flex flex-wrap gap-3">
             <div className="relative flex-1 min-w-[200px] max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Buscar equipe..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder="Buscar setor..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9" />
             </div>
             {isAdmin && (
               <Button onClick={() => setNewTeamOpen(true)} className="gap-1.5">
-                <Plus className="h-4 w-4" /> Nova Equipe
+                <Plus className="h-4 w-4" /> Novo Setor
               </Button>
             )}
           </div>
@@ -120,7 +120,7 @@ export default function EquipesPage() {
             ))}
             {filteredTeams.length === 0 && (
               <div className="col-span-full text-center py-12 text-muted-foreground">
-                Nenhuma equipe encontrada.
+                Nenhum setor encontrado.
               </div>
             )}
           </div>
@@ -133,7 +133,7 @@ export default function EquipesPage() {
           {selectedTeam && (
             <>
               <SheetHeader>
-                <SheetTitle>Equipe</SheetTitle>
+                <SheetTitle>Setor</SheetTitle>
               </SheetHeader>
               <div className="mt-6 space-y-6">
                 {/* Name */}
@@ -198,7 +198,7 @@ export default function EquipesPage() {
 
                 {isAdmin && (
                   <Button variant="destructive" size="sm" onClick={() => handleDeleteTeam(selectedTeam.id)} className="w-full gap-1.5">
-                    <Trash2 className="h-4 w-4" /> Excluir equipe
+                    <Trash2 className="h-4 w-4" /> Excluir setor
                   </Button>
                 )}
               </div>
@@ -211,11 +211,11 @@ export default function EquipesPage() {
       <Dialog open={newTeamOpen} onOpenChange={setNewTeamOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Nova Equipe</DialogTitle>
+            <DialogTitle>Novo Setor</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Nome da equipe</Label>
+              <Label>Nome do setor</Label>
               <Input value={newTeamName} onChange={(e) => setNewTeamName(e.target.value)} placeholder="Ex: Desenvolvimento" />
             </div>
             <div className="space-y-2">
@@ -247,7 +247,7 @@ export default function EquipesPage() {
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setNewTeamOpen(false)}>Cancelar</Button>
-            <Button onClick={handleCreateTeam} disabled={!newTeamName.trim()}>Criar Equipe</Button>
+            <Button onClick={handleCreateTeam} disabled={!newTeamName.trim()}>Criar Setor</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

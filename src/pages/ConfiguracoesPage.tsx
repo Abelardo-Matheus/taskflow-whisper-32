@@ -879,7 +879,7 @@ export default function ConfiguracoesPage() {
           {/* Acesso a Coleções */}
           <TabsContent value="acesso" className="mt-4 space-y-6">
             <p className="text-sm text-muted-foreground">
-              Configure quais equipes e usuários têm acesso a cada coleção. Coleções sem regras de acesso ficam visíveis para todos.
+              Configure quais setores e usuários têm acesso a cada coleção. Coleções sem regras de acesso ficam visíveis para todos.
             </p>
             {collections?.filter(c => !c.is_archived).map(col => {
               const colTeams = collectionTeamsData?.filter(ct => ct.collection_id === col.id) || [];
@@ -890,7 +890,7 @@ export default function ConfiguracoesPage() {
                   
                   {/* Teams */}
                   <div className="space-y-2">
-                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Equipes com acesso</label>
+                    <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Setores com acesso</label>
                     <div className="flex flex-wrap gap-1.5">
                       {colTeams.map(ct => {
                         const team = teams?.find(t => t.id === ct.team_id);
@@ -904,7 +904,7 @@ export default function ConfiguracoesPage() {
                     </div>
                     {teams && teams.filter(t => !colTeams.some(ct => ct.team_id === t.id)).length > 0 && (
                       <Select onValueChange={(tid) => addCollectionTeam.mutate({ collectionId: col.id, teamId: tid })}>
-                        <SelectTrigger className="h-8 w-48 text-xs"><SelectValue placeholder="+ Adicionar equipe" /></SelectTrigger>
+                        <SelectTrigger className="h-8 w-48 text-xs"><SelectValue placeholder="+ Adicionar setor" /></SelectTrigger>
                         <SelectContent>
                           {teams.filter(t => !colTeams.some(ct => ct.team_id === t.id)).map(t => (
                             <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>

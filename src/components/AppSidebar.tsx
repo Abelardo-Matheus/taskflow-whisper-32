@@ -26,7 +26,7 @@ export function AppSidebar() {
     { title: "Projetos", url: "/projetos", icon: FolderOpen, badge: 0 },
     { title: "Chat IA", url: "/chat", icon: MessageSquare, badge: 0 },
     { title: "Equipe", url: "/equipe", icon: Users, badge: 0 },
-    { title: "Equipes", url: "/equipes", icon: UsersRound, badge: 0 },
+    { title: "Setores", url: "/equipes", icon: UsersRound, badge: 0 },
     { title: "Configurações", url: "/configuracoes", icon: Settings, badge: 0 },
   ];
 
