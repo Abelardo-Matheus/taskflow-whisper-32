@@ -69,6 +69,12 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
     return groupTasksForSwimlanes(filteredTasks, viewConfig.config.groupBy, cols, profilesList, projectsList);
   }, [filteredTasks, viewConfig.config.groupBy, cols, profilesList, projectsList]);
 
+  const workStartHour = useMemo(() => {
+    const t = wsSettings?.work_start_time || "09:00";
+    const [h, m] = t.split(":").map(Number);
+    return h + (m || 0) / 60;
+  }, [wsSettings]);
+
   return (
     <div className="flex-1 overflow-auto p-6 flex flex-col gap-8">
       {swimlanes.map((swimlane, swimlaneIndex) => (
@@ -169,6 +175,7 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
                             projectName={taskProjectName}
                             kanbanHistory={taskHistory}
                             dailyWorkHours={wsSettings?.daily_work_hours || 8}
+                            workStartHour={workStartHour}
                             weekendDays={wsSettings?.weekend_days || [0, 6]}
                             holidays={wsHolidays?.map(h => h.holiday_date) || []}
                             isDoneColumn={isDoneCol}

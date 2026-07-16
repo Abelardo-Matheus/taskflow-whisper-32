@@ -1,4 +1,4 @@
-import { cn, getBRTToday, formatTaskDueDate, isTaskOverdue } from "@/lib/utils";
+import { cn, getBRTToday, formatTaskDueDate, isTaskOverdue, calcBusinessHours } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { AlertTriangle, Calendar, CheckCircle2, Link2, ArrowRight, ArrowLeft, FolderOpen, Clock, Trash2 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -16,6 +16,7 @@ interface TaskCardProps {
   projectName?: string | null;
   kanbanHistory?: TaskKanbanHistoryRecord[];
   dailyWorkHours?: number;
+  workStartHour?: number;
   weekendDays?: number[];
   holidays?: string[];
   isDoneColumn?: boolean;
@@ -28,25 +29,7 @@ function isOverdue(task: FullTask, isDoneColumn?: boolean): boolean {
   return isTaskOverdue(task.due_date);
 }
 
-function calcWorkHoursRealTime(from: Date, to: Date, weekendDays: number[], holidays: Set<string>): number {
-  if (from >= to) return 0;
-  let totalMs = 0;
-  const current = new Date(from);
-  while (current < to) {
-    const dk = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
-    const isOff = weekendDays.includes(current.getDay()) || holidays.has(dk);
-    const endOfDay = new Date(current);
-    endOfDay.setHours(23, 59, 59, 999);
-    const nextStep = endOfDay < to ? endOfDay : to;
-    if (!isOff) {
-      totalMs += nextStep.getTime() - current.getTime();
-    }
-    current.setTime(endOfDay.getTime() + 1);
-  }
-  return totalMs / (1000 * 60 * 60);
-}
-
-export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, weekendDays = [0, 6], holidays = [], isDoneColumn = false, onDelete, profiles = [] }: TaskCardProps) {
+export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, workStartHour = 9, weekendDays = [0, 6], holidays = [], isDoneColumn = false, onDelete, profiles = [] }: TaskCardProps) {
   const [, setTick] = useState(0);
   useEffect(() => {
     if (isDoneColumn) return;
@@ -68,7 +51,7 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
     // Current (open) record
     const currentRec = kanbanHistory.find(r => !r.exited_at);
     if (currentRec && currentRec.time_limit_hours && currentRec.time_limit_hours > 0) {
-      const workHrs = calcWorkHoursRealTime(new Date(currentRec.entered_at), new Date(), weekendDays, holidaySet);
+      const workHrs = calcBusinessHours(new Date(currentRec.entered_at), new Date(), dailyWorkHours, workStartHour, weekendDays, holidaySet);
       if (workHrs > currentRec.time_limit_hours) {
         kanbanExceededHours = Math.round((workHrs - currentRec.time_limit_hours) * 10) / 10;
       }
@@ -81,7 +64,7 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
       for (const rec of kanbanHistory) {
         const entered = new Date(rec.entered_at);
         const exited = rec.exited_at ? new Date(rec.exited_at) : new Date();
-        totalWorkHours += calcWorkHoursRealTime(entered, exited, weekendDays, holidaySet);
+        totalWorkHours += calcBusinessHours(entered, exited, dailyWorkHours, workStartHour, weekendDays, holidaySet);
       }
       if (totalWorkHours > taskDuration) {
         totalExceededHours = Math.round((totalWorkHours - taskDuration) * 10) / 10;

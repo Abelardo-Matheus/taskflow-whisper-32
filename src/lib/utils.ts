@@ -72,5 +72,50 @@ export function isTaskOverdue(dueDateStr: string | null | undefined): boolean {
   return new Date() > due;
 }
 
+export function calcBusinessHours(
+  from: Date,
+  to: Date,
+  dailyHours: number,
+  workStartHour: number,
+  weekendDays: number[],
+  holidays: string[] | Set<string>
+): number {
+  if (from >= to) return 0;
+  
+  const holidaySet = holidays instanceof Set ? holidays : new Set(holidays);
+  let totalHours = 0;
+  let current = new Date(from);
+  
+  while (current < to) {
+    const dk = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
+    const isOff = weekendDays.includes(current.getDay()) || holidaySet.has(dk);
+    
+    const endOfDay = new Date(current);
+    endOfDay.setHours(23, 59, 59, 999);
+    const nextStep = endOfDay < to ? endOfDay : to;
+    
+    if (!isOff) {
+      const dayStart = new Date(current);
+      dayStart.setHours(Math.floor(workStartHour), (workStartHour % 1) * 60, 0, 0);
+      
+      const dayEnd = new Date(current);
+      const endHour = workStartHour + dailyHours;
+      dayEnd.setHours(Math.floor(endHour), (endHour % 1) * 60, 0, 0);
+      
+      const overlapStart = current > dayStart ? current : dayStart;
+      const overlapEnd = nextStep < dayEnd ? nextStep : dayEnd;
+      
+      if (overlapStart < overlapEnd) {
+        totalHours += (overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60);
+      }
+    }
+    
+    current.setTime(endOfDay.getTime() + 1);
+  }
+  
+  return totalHours;
+}
+
+
 
 

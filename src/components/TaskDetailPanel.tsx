@@ -16,7 +16,7 @@ import { useWorkspaceSettings, useWorkspaceHolidays } from "@/hooks/useWorkspace
 import { formatHoursDuration } from "@/lib/taskDistribution";
 import { autoPositionTask } from "@/lib/autoPosition";
 import { supabase } from "@/integrations/supabase/client";
-import { cn, getBRTToday, toDatetimeLocal, fromDatetimeLocal, isTaskOverdue } from "@/lib/utils";
+import { cn, getBRTToday, toDatetimeLocal, fromDatetimeLocal, isTaskOverdue, calcBusinessHours } from "@/lib/utils";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
@@ -486,23 +486,7 @@ export function TaskDetailPanel({ task, columns, profiles = [], onClose, expandI
                   .sort((a, b) => new Date(a.entered_at).getTime() - new Date(b.entered_at).getTime());
                 if (taskHistory.length === 0) return null;
 
-                const calcWorkHrs = (from: Date, to: Date) => {
-                  if (from >= to) return 0;
-                  let totalMs = 0;
-                  const current = new Date(from);
-                  while (current < to) {
-                    const dk = `${current.getFullYear()}-${String(current.getMonth() + 1).padStart(2, "0")}-${String(current.getDate()).padStart(2, "0")}`;
-                    const isOff = weekendDays.includes(current.getDay()) || holidayDates.includes(dk);
-                    const endOfDay = new Date(current);
-                    endOfDay.setHours(23, 59, 59, 999);
-                    const nextStep = endOfDay < to ? endOfDay : to;
-                    if (!isOff) {
-                      totalMs += nextStep.getTime() - current.getTime();
-                    }
-                    current.setTime(endOfDay.getTime() + 1);
-                  }
-                  return totalMs / (1000 * 60 * 60);
-                };
+                const calcWorkHrs = (from: Date, to: Date) => calcBusinessHours(from, to, dailyHours, workStartHour, weekendDays, holidayDates);
 
                 return (
                   <div>
