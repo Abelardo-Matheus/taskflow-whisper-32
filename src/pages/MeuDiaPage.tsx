@@ -37,16 +37,21 @@ export default function MeuDiaPage() {
     return matchesUser && matchesSearch && matchesPriority;
   });
 
-  const todayTasks = filteredTasks.filter(t => t.due_date === today);
+  const todayTasks = filteredTasks.filter(t => t.due_date && t.due_date.startsWith(today));
   const overdueTasks = filteredTasks.filter(t => {
-    if (!t.due_date || t.due_date >= today) return false;
+    if (!t.due_date) return false;
+    if (t.due_date.startsWith(today)) return false;
+    if (t.due_date.split("T")[0] > today) return false;
     const isDoneCol = automations?.some(a => a.column_id === t.column_id && a.type === "complete_task");
     return !isDoneCol;
   });
   
-  const myFutureOrNoDateTasks = filteredTasks.filter(t => 
-    user && ((t.assignee_ids || []).includes(user.id) || t.assignee_id === user.id) && (!t.due_date || t.due_date > today)
-  );
+  const myFutureOrNoDateTasks = filteredTasks.filter(t => {
+    if (!user || (!(t.assignee_ids || []).includes(user.id) && t.assignee_id !== user.id)) return false;
+    if (!t.due_date) return true;
+    if (t.due_date.startsWith(today)) return false;
+    return t.due_date.split("T")[0] > today;
+  });
 
   // Subtasks with due_date = today across all filtered tasks
   const todaySubtasks = useMemo(() => {
@@ -60,6 +65,12 @@ export default function MeuDiaPage() {
       return matchSearch;
     });
   }, [filteredTasks, today, searchQuery]);
+
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return "";
+    const d = dateStr.includes("T") ? new Date(dateStr) : new Date(dateStr + "T12:00:00");
+    return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' });
+  };
 
   const handleFinalizeTask = (e: React.MouseEvent, task: FullTask) => {
     e.stopPropagation();
@@ -166,7 +177,7 @@ export default function MeuDiaPage() {
                     <PriorityDot priority={task.priority} />
                     <span className="flex-1 text-sm font-medium text-card-foreground truncate group-hover:text-primary transition-colors">{task.title}</span>
                     <span className="text-[11px] text-status-overdue font-medium whitespace-nowrap">
-                      {new Date(task.due_date!).toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                      {formatDateDisplay(task.due_date!)}
                     </span>
                     {task.collections && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">{task.collections.name}</Badge>}
                     <Button 
@@ -240,7 +251,7 @@ export default function MeuDiaPage() {
                     <span className="flex-1 text-sm font-medium text-card-foreground truncate group-hover:text-primary transition-colors">{task.title}</span>
                     {task.due_date && (
                       <span className="text-[11px] text-muted-foreground font-medium whitespace-nowrap">
-                        {new Date(task.due_date + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' })}
+                        {formatDateDisplay(task.due_date)}
                       </span>
                     )}
                     {task.collections && <Badge variant="secondary" className="text-[10px] hidden sm:inline-flex">{task.collections.name}</Badge>}
