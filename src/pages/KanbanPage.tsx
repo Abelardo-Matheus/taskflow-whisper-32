@@ -618,6 +618,7 @@ export default function KanbanPage() {
             deleteConnectionMut={deleteConnectionMut}
             updateConnectionMut={updateConnectionMut}
             createAutomation={createAutomation}
+            onUpdateTask={(id, updates) => updateTask.mutate({ id, ...updates })}
             deleteAutomation={deleteAutomation}
             setSelectedTask={setSelectedTask}
             handleDeleteTask={handleDeleteTask}

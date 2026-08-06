@@ -6,6 +6,7 @@ import { PriorityDot } from "./PriorityBadge";
 import type { FullTask, ProfileWithSector } from "@/hooks/useTaskData";
 import type { TaskKanbanHistoryRecord } from "@/hooks/useTaskData";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { toast } from "sonner";
 
 interface TaskCardProps {
   task: FullTask;
@@ -21,6 +22,7 @@ interface TaskCardProps {
   holidays?: string[];
   isDoneColumn?: boolean;
   onDelete?: (task: FullTask) => void;
+  onComplete?: (taskId: string) => void;
   profiles?: ProfileWithSector[];
 }
 
@@ -29,7 +31,7 @@ function isOverdue(task: FullTask, isDoneColumn?: boolean): boolean {
   return isTaskOverdue(task.due_date);
 }
 
-export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, workStartHour = 9, weekendDays = [0, 6], holidays = [], isDoneColumn = false, onDelete, profiles = [] }: TaskCardProps) {
+export function TaskCard({ task, onClick, showLinked, linkedCollectionName, linkedDirection, projectName, kanbanHistory, dailyWorkHours = 8, workStartHour = 9, weekendDays = [0, 6], holidays = [], isDoneColumn = false, onDelete, onComplete, profiles = [] }: TaskCardProps) {
   const [, setTick] = useState(0);
   useEffect(() => {
     if (isDoneColumn) return;
@@ -116,20 +118,36 @@ export function TaskCard({ task, onClick, showLinked, linkedCollectionName, link
             </TooltipProvider>
           )}
           {hasActiveImpediment && <AlertTriangle className="h-3.5 w-3.5 text-status-attention" />}
-          {onDelete && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                if (window.confirm("Tem certeza que deseja excluir esta task?")) {
-                  onDelete(task);
-                }
-              }}
-              className="text-muted-foreground hover:text-destructive transition-colors ml-1 p-0.5 rounded"
-              title="Excluir task"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
-          )}
+          
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity flex items-center bg-card shadow-sm border rounded ml-1 overflow-hidden">
+            {onComplete && !isDoneColumn && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onComplete(task.id);
+                  toast.success("Tarefa concluída!");
+                }}
+                className="text-muted-foreground hover:bg-success/10 hover:text-success transition-colors p-1"
+                title="Concluir tarefa"
+              >
+                <CheckCircle2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (window.confirm("Tem certeza que deseja excluir esta task?")) {
+                    onDelete(task);
+                  }
+                }}
+                className="text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors p-1"
+                title="Excluir tarefa"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
         </div>
       </div>
       <div className="mt-3 flex items-center gap-2 flex-wrap">

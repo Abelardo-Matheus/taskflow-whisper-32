@@ -18,6 +18,7 @@ export function AppSidebar() {
   const { isDark, toggle } = useTheme();
   // unreadCount is now handled by NotificationPanel
 
+  const adminOnlyRoutes = ["/equipe", "/equipes", "/configuracoes", "/projetos"];
   const navItems = [
     { title: "Meu Dia", url: "/meu-dia", icon: Sun, badge: 0 },
     { title: "Kanban", url: "/", icon: Columns, badge: 0 },
@@ -28,7 +29,7 @@ export function AppSidebar() {
     { title: "Equipe", url: "/equipe", icon: Users, badge: 0 },
     { title: "Setores", url: "/equipes", icon: UsersRound, badge: 0 },
     { title: "Configurações", url: "/configuracoes", icon: Settings, badge: 0 },
-  ];
+  ].filter(item => profile?.role === "admin" || !adminOnlyRoutes.includes(item.url));
 
   const initials = profile?.name
     ? profile.name.split(" ").map(n => n[0]).join("").slice(0, 2).toUpperCase()

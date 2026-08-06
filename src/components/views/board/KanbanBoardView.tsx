@@ -43,6 +43,7 @@ interface KanbanBoardViewProps {
   deleteAutomation: any;
   setSelectedTask: (task: FullTask) => void;
   handleDeleteTask?: (task: FullTask) => void;
+  onUpdateTask?: (id: string, updates: Partial<FullTask>) => void;
   // Inline add
   showInlineAdd: boolean;
   setShowInlineAdd: (v: boolean) => void;
@@ -61,7 +62,7 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
     handleColumnDragStart, handleColumnDragOver, handleRenameColumn,
     handleDeleteColumn, setNewTaskColumnId, setNewTaskModalOpen,
     updateColumn, createConnection, deleteConnectionMut, updateConnectionMut,
-    createAutomation, deleteAutomation, setSelectedTask, handleDeleteTask,
+    createAutomation, deleteAutomation, setSelectedTask, handleDeleteTask, onUpdateTask,
     showInlineAdd, setShowInlineAdd, inlineAddCol, setInlineAddCol, handleAddColumn, collections
   } = props;
 
@@ -180,6 +181,11 @@ export function KanbanBoardView(props: KanbanBoardViewProps) {
                             holidays={wsHolidays?.map(h => h.holiday_date) || []}
                             isDoneColumn={isDoneCol}
                             onDelete={handleDeleteTask}
+                            onComplete={
+                              onUpdateTask && automations?.find(a => a.type === "complete_task")
+                                ? (taskId) => onUpdateTask(taskId, { column_id: automations.find(a => a.type === "complete_task")!.column_id })
+                                : undefined
+                            }
                             profiles={profilesList}
                           />
                         );

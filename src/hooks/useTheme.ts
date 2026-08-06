@@ -2,7 +2,11 @@ import { useState, useEffect } from "react";
 
 export function useTheme() {
   const [isDark, setIsDark] = useState(() => {
-    return document.documentElement.classList.contains("dark");
+    const stored = localStorage.getItem("theme");
+    if (stored) {
+      return stored === "dark";
+    }
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
   });
 
   useEffect(() => {
